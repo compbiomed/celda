@@ -11,13 +11,7 @@ Imports:
     gtools,
     entropy,
     RColorBrewer,
-    pheatmap,
-    grid,
-    scales,
-    gtable,
-    stats,
-    grDevices,
-    graphics
+    pheatmap
 Suggests:
 	testthat,
 	knitr,
