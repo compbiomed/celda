@@ -4,7 +4,7 @@
 \alias{calculate_marginal_likelihood}
 \title{Calculate the marginal likelihood from a single celda model}
 \usage{
-calculate_marginal_likelihood(completeLogLik)
+calculate_marginal_likelihood(completeLogLik, log = F)
 }
 \arguments{
 \item{completeLogLik}{The complete Gibbs sampling history of log-likelihoods for a single celda chain}

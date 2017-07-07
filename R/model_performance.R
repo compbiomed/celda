@@ -6,7 +6,7 @@
 #' @param completeLogLik The complete Gibbs sampling history of log-likelihoods for a single celda chain
 #' @return The estimated marginal likelihood as an mpfr number
 #' @export
-calculate_marginal_likelihood = function(completeLogLik) {
+calculate_marginal_likelihood = function(completeLogLik, log=F) {
   mpfr_log_lik = Rmpfr::mpfr(completeLogLik, 512)
   complete_likelihood = exp(mpfr_log_lik)
   marginal_likelihood = (Rmpfr::mean((1/complete_likelihood)))^-1
@@ -19,9 +19,13 @@ calculate_marginal_likelihood = function(completeLogLik) {
 #' Perplexity is defined as the inverse of the geometric mean of the log-likelihoods over all 
 #' iterations of Gibbs sampling.
 #' @param completeLogLik The complete Gibbs sampling history of log-likelihoods for a single celda chain
+#' @param log Set log = TRUE when Log(perplexity) is Inf
 #' @return The perplexity for the provided chain as an mpfr number
 #' @export
-calculate_perplexity = function(completeLogLik) {
+calculate_perplexity = function(completeLogLik, log=FALSE) {
+  if (log) {
+    return(-mean(completeLogLik))
+  }
   mpfr_log_lik = Rmpfr::mpfr(completeLogLik, 512)
   perplexity = exp(Rmpfr::mean(mpfr_log_lik))^-1
   return(perplexity)
@@ -29,11 +33,11 @@ calculate_perplexity = function(completeLogLik) {
 
 
 # Convenience function to calculate performance metrics by specifying a method. 
-calculate_performance_metric = function(log.likelihoods, method="perplexity") {
+calculate_performance_metric = function(log.likelihoods, method="perplexity", log=FALSE) {
     if (method == "perplexity") {
-    metric = calculate_perplexity(log.likelihoods)
+    metric = calculate_perplexity(log.likelihoods, log)
   } else if (method == "harmonic") {
-    metric = calculate_marginal_likelihood(log.likelihoods)
+    metric = calculate_marginal_likelihood(log.likelihoods, log)
   } else if (method == "loglik") {
      metric = max(log.likelihoods)
   } else stop("Invalid method specified")
