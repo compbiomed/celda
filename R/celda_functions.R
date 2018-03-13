@@ -150,11 +150,11 @@ recodeClusterY = function(celda.mod, from, to) {
 #' @return TRUE if provided count matrix matches the one used in the celda run, FALSE otherwise
 #' @export
 compareCountMatrix = function(count.matrix, celda.obj) {
-  if (length(celda.obj$y != 0) & nrow(count.matrix) != length(celda.obj$y)) {
+  if (length(celda.obj$y) != 0 & isTRUE(nrow(count.matrix) != celda.obj$y)) {
     stop("The provided celda object was generated from a counts matrix with a different number of genes than the one provided.")
   }
   
-  if (length(celda.obj$z != 0 ) & ncol(count.matrix) != length(celda.obj$z)) {
+  if (length(celda.obj$z) != 0  & isTRUE(ncol(count.matrix) != celda.obj$z)) {
     stop("The provided celda object was generated from a counts matrix with a different number of cells than the one provided.")
   }
   
