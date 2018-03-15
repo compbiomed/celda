@@ -37,8 +37,7 @@ calculatePerplexityWithCrossValidation = function(celda.list, counts, folds, tit
                               message(paste("======================================\n", 
                                             "K:", mod$K, "L:", mod$L))
                               res.df = data.frame(k=numeric(0), l=numeric(0),
-                                                  train.perplexity=numeric(0),
-                                                  held.out.perplexity=numeric(0))
+                                                  train.perplexity=numeric(0))
                               for (i in 1:folds) {
                                 message(paste("    Fold: ", i))
                                 train.counts = counts[, split.idx != i]
