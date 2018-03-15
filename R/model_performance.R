@@ -42,23 +42,19 @@ calculatePerplexityWithCrossValidation = function(celda.list, counts, folds, tit
                               for (i in 1:folds) {
                                 message(paste("    Fold: ", i))
                                 train.counts = counts[, split.idx != i]
-                                train.mod = mod
-                                train.mod$z = mod$z[split.idx != i]
-                                train.mod$sample.label = train.mod$sample.label[split.idx != i]
-                                train.mod$names$column = train.mod$names$column[split.idx != i]
+                                train.celda.res = celda(train.counts, 
+                                                        model=celda.list$content.type,
+                                                    sample.label=as.numeric(mod$sample.label)[split.idx != i],
+                                                        nchains=1,
+                                                        max.iter=25,
+                                                        K=mod$K,
+                                                        L=mod$L)
                                 
-                                held.out.counts = counts[, split.idx == i]
-                                held.out.mod = mod
-                                held.out.mod$z = mod$z[split.idx == i]
-                                held.out.mod$sample.label = held.out.mod$sample.label[split.idx == i]
-                                held.out.mod$names$column = held.out.mod$names$column[split.idx == i]
-                                
-                                train.perplexity = calculatePerplexity(train.counts, train.mod)
-                                held.out.perplexity = calculatePerplexity(held.out.counts, held.out.mod)
+                                train.perplexity = calculatePerplexity(train.counts, 
+                                                                       train.celda.res$res.list[[1]])
                                 res.df = dplyr::add_row(res.df, 
                                                         k=mod$K, l=mod$L,
-                                                        train.perplexity=train.perplexity,
-                                                        held.out.perplexity=held.out.perplexity)
+                                                        train.perplexity=train.perplexity)
                               }
                               return(res.df)
                             })
