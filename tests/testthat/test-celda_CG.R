@@ -40,7 +40,7 @@ test_that(desc = "Ensure celda_CG always returns same output in 'non-stochastic'
 test_that(desc = "Cell simulation works", {
   celdacg <- simulateCells(K = 5, L = 3, model = "celda_CG")
   expect_equal(celdacg$K, 5)
-  expect_equal(celdacg$L, 5)
+  expect_equal(celdacg$L, 3)
 })
 
 
