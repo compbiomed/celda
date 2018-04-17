@@ -40,6 +40,7 @@
 #' @param max.iter Maximum iterations of Gibbs sampling to perform regardless of convergence. Default 200.
 #' @param split.on.iter On every 'split.on.iter' iteration, a heuristic will be applied to determine if a gene/cell cluster should be reassigned and another gene/cell cluster should be split into two clusters. Default 10.
 #' @param split.on.last After the the chain has converged according to 'stop.iter', a heuristic will be applied to determine if a gene/cell cluster should be reassigned and another gene/cell cluster should be split into two clusters. If a split occurs, then 'stop.iter' will be reset. Default TRUE.
+#' @param random.state.order Whether to sample cells in a random order when performing Gibbs sampling. Defaults to TRUE.
 #' @param count.checksum An MD5 checksum for the provided counts matrix
 #' @param seed Parameter to set.seed() for random number generation
 #' @param z.init Initial values of z. If NULL, z will be randomly sampled. Default NULL.
@@ -49,7 +50,7 @@
 #' @export
 celda_C = function(counts, sample.label=NULL, K, alpha=1, beta=1, 
                  	 stop.iter = 10, max.iter=200, split.on.iter=10, split.on.last=TRUE,
-                 	 count.checksum=NULL, seed=12345,
+                 	 random.state.order=TRUE, count.checksum=NULL, seed=12345,
                  	 z.init = NULL, process.counts=TRUE, logfile=NULL) {
   
   ## Error checking and variable processing
@@ -90,7 +91,7 @@ celda_C = function(counts, sample.label=NULL, K, alpha=1, beta=1,
   do.cell.split = TRUE
   while(iter <= max.iter & num.iter.without.improvement <= stop.iter) {
     
-    next.z = cC.calcGibbsProbZ(counts=counts, m.CP.by.S=m.CP.by.S, n.G.by.CP=n.G.by.CP, n.by.C=n.by.C, n.CP=n.CP, z=z, s=s, K=K, nG=nG, nM=nM, alpha=alpha, beta=beta)
+    next.z = cC.calcGibbsProbZ(counts=counts, m.CP.by.S=m.CP.by.S, n.G.by.CP=n.G.by.CP, n.by.C=n.by.C, n.CP=n.CP, z=z, s=s, K=K, nG=nG, nM=nM, alpha=alpha, beta=beta, random.state.order=random.state.order)
     m.CP.by.S = next.z$m.CP.by.S
     n.G.by.CP = next.z$n.G.by.CP
     n.CP = next.z$n.CP
@@ -150,14 +151,19 @@ celda_C = function(counts, sample.label=NULL, K, alpha=1, beta=1,
 
 
 # Gibbs sampling for the celda_C Model
-cC.calcGibbsProbZ = function(counts, m.CP.by.S, n.G.by.CP, n.by.C, n.CP, z, s, K, nG, nM, alpha, beta, do.sample=TRUE) {
+cC.calcGibbsProbZ = function(counts, m.CP.by.S, n.G.by.CP, n.by.C, n.CP, z, s, K, nG, nM, alpha, beta, do.sample=TRUE, random.state.order=TRUE) {
 
   ## Set variables up front outside of loop  
   probs = matrix(NA, ncol=nM, nrow=K)
   temp.n.G.by.CP = n.G.by.CP
   temp.n.CP = n.CP
   
-  ix = sample(1:nM)
+  if(isTRUE(random.state.order)) {
+    ix = sample(1:nM)
+  } else {
+    ix = rev(1:nM)
+  } 
+
   for(i in ix) {
 	
 	## Subtract current cell counts from matrices

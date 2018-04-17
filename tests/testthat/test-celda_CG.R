@@ -4,20 +4,44 @@ library(testthat)
 library(Rtsne)
 context("Testing celda_CG")
 
-##celda_CG.R##
-test_that(desc = "Making sure celda_CG runs without crashing",{
-  celdacg <- simulateCells(K = 5, L = 3, model = "celda_CG")
-  celdaCG.res <- celda(counts = celdacg$counts, model = "celda_CG", nchains = 2, K = 5, L = 3, max.iter = 15)
-  expect_equal(length(celdaCG.res$res.list[[1]]$z), ncol(celdacg$counts))
-  expect_equal(length(celdaCG.res$res.list[[1]]$y), nrow(celdacg$counts)) 
-})
-
 #Loading pre-made simulatedcells/celda objects
 load("../celdaCGsim.rda")
 load("../celdaCG.rda")
+load("../celdaCG.non.stochastic.res.rda")
 model_CG = getModel(celdaCG.res, K = 5, L = 3)[[1]]
 factorized <- factorizeMatrix(model_CG, celdaCG.sim$counts)
 counts.matrix <- celdaCG.sim$counts
+
+
+test_that(desc = "celda_CG runs without crashing", {
+   celdaCG.test.res <- celda(counts = celdaCG.sim$counts, model = "celda_CG", 
+                             nchains = 1, K = celdaCG.sim$K, L = celdaCG.sim$L, max.iter = 15)
+  # Simple check: do the cell/gene cluster lengths match the provided counts matrix dims?
+  expect_equal(length(celdaCG.test.res$res.list[[1]]$z), ncol(celdaCG.sim$counts))
+  expect_equal(length(celdaCG.test.res$res.list[[1]]$y), nrow(celdaCG.sim$counts)) 
+})
+
+
+test_that(desc = "Ensure celda_CG always returns same output in 'non-stochastic' mode", {
+  celdaCG.test.res <- celda(counts = celdaCG.sim$counts, model = "celda_CG", 
+                            nchains = 1, K = celdaCG.sim$K, L = celdaCG.sim$L, max.iter = 15,
+                            random.state.order = FALSE)
+  
+  # Non-stochasticity: make sure cluster labels are consistent with reference
+  # celda run
+  test.model <- celdaCG.test.res$res.list[[1]]
+  expect.model <- celdaCG.non.stochastic.res$res.list[[1]]
+  expect_equal(test.model$z, expect.model$z)
+  expect_equal(test.model$y, expect.model$y)
+  expect_equal(test.model$finalLogLik, expect.model$finalLogLik)
+})
+
+
+test_that(desc = "Cell simulation works", {
+  celdacg <- simulateCells(K = 5, L = 3, model = "celda_CG")
+  expect_equal(celdacg$K, 5)
+  expect_equal(celdacg$L, 5)
+})
 
 
 #Making sure getModel if functioning correctly

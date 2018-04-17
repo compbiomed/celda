@@ -51,12 +51,14 @@
 #' @param y.init Initial values of y. If NULL, y will be randomly sampled. Default NULL.
 #' @param process.counts Whether to cast the counts matrix to integer and round(). Defaults to TRUE.
 #' @param logfile The name of the logfile to redirect messages to.
+#' @param random.state.order Whether to sample genes / cells in a random order when performing Gibbs sampling. Defaults to TRUE.
 #' @export
 celda_CG = function(counts, sample.label=NULL, K, L,
                     alpha=1, beta=1, delta=1, gamma=1, 
                     stop.iter = 10, max.iter=200, split.on.iter=10, split.on.last=TRUE,
                     seed=12345, count.checksum=NULL,
-                    z.init = NULL, y.init = NULL, process.counts=TRUE, logfile=NULL) {
+                    z.init = NULL, y.init = NULL, process.counts=TRUE, logfile=NULL,
+                    random.state.order=TRUE) {
  
   ## Error checking and variable processing
   if (isTRUE(processCounts)) {
@@ -107,7 +109,7 @@ celda_CG = function(counts, sample.label=NULL, K, L,
     ## Gibbs sampling for each cell
     n.TS.by.C = rowsum.y(counts, y=y, L=L)
     n.TS.by.CP = t(n.CP.by.TS)
-	next.z = cC.calcGibbsProbZ(counts=n.TS.by.C, m.CP.by.S=m.CP.by.S, n.G.by.CP=n.TS.by.CP, n.CP=n.CP, n.by.C=n.by.C, z=z, s=s, K=K, nG=L, nM=nM, alpha=alpha, beta=beta)
+	next.z = cC.calcGibbsProbZ(counts=n.TS.by.C, m.CP.by.S=m.CP.by.S, n.G.by.CP=n.TS.by.CP, n.CP=n.CP, n.by.C=n.by.C, z=z, s=s, K=K, nG=L, nM=nM, alpha=alpha, beta=beta, random.state.order=random.state.order)
     m.CP.by.S = next.z$m.CP.by.S
     n.TS.by.CP = next.z$n.G.by.CP
     n.CP = next.z$n.CP
@@ -116,7 +118,7 @@ celda_CG = function(counts, sample.label=NULL, K, L,
     ## Gibbs sampling for each gene
     n.CP.by.G = rowsum.z(counts, z=z, K=K)
     n.CP.by.TS = t(n.TS.by.CP) 
- 	next.y = cG.calcGibbsProbY(counts.t=n.CP.by.G, n.C.by.TS=n.CP.by.TS, n.by.TS=n.by.TS, nG.by.TS=nG.by.TS, n.by.G=n.by.G, y=y, L=L, nG=nG, beta=beta, delta=delta, gamma=gamma)
+ 	next.y = cG.calcGibbsProbY(counts.t=n.CP.by.G, n.C.by.TS=n.CP.by.TS, n.by.TS=n.by.TS, nG.by.TS=nG.by.TS, n.by.G=n.by.G, y=y, L=L, nG=nG, beta=beta, delta=delta, gamma=gamma, random.state.order=random.state.order)
 	n.CP.by.TS = next.y$n.C.by.TS
 	nG.by.TS = next.y$nG.by.TS
 	n.by.TS = next.y$n.by.TS

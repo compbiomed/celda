@@ -8,7 +8,7 @@ celda_CG(counts, sample.label = NULL, K, L, alpha = 1, beta = 1,
   delta = 1, gamma = 1, stop.iter = 10, max.iter = 200,
   split.on.iter = 10, split.on.last = TRUE, seed = 12345,
   count.checksum = NULL, z.init = NULL, y.init = NULL,
-  process.counts = TRUE, logfile = NULL)
+  process.counts = TRUE, logfile = NULL, random.state.order = TRUE)
 }
 \arguments{
 \item{counts}{A numeric count matrix.}
@@ -46,6 +46,8 @@ celda_CG(counts, sample.label = NULL, K, L, alpha = 1, beta = 1,
 \item{process.counts}{Whether to cast the counts matrix to integer and round(). Defaults to TRUE.}
 
 \item{logfile}{The name of the logfile to redirect messages to.}
+
+\item{random.state.order}{Whether to sample genes / cells in a random order when performing Gibbs sampling. Defaults to TRUE.}
 }
 \description{
 celda Cell and Gene Clustering Model

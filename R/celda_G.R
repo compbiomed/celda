@@ -45,6 +45,7 @@
 #' @param max.iter Maximum iterations of Gibbs sampling to perform regardless of convergence. Default 200.
 #' @param split.on.iter On every 'split.on.iter' iteration, a heuristic will be applied to determine if a gene/cell cluster should be reassigned and another gene/cell cluster should be split into two clusters. Default 10.
 #' @param split.on.last After the the chain has converged according to 'stop.iter', a heuristic will be applied to determine if a gene/cell cluster should be reassigned and another gene/cell cluster should be split into two clusters. If a split occurs, then 'stop.iter' will be reset. Default TRUE.
+#' @param random.state.order Whether to sample genes in a random order when performing Gibbs sampling. Defaults to TRUE.
 #' @param count.checksum An MD5 checksum for the provided counts matrix
 #' @param seed Parameter to set.seed() for random number generation.
 #' @param y.init Initial values of y. If NULL, y will be randomly sampled. Default NULL.
@@ -54,7 +55,7 @@
 #' @export
 celda_G = function(counts, L, beta=1, delta=1, gamma=1,
 					stop.iter=10, max.iter=200, split.on.iter=10, split.on.last=TRUE,
-					count.checksum=NULL, seed=12345, 
+					random.state.order=TRUE, count.checksum=NULL, seed=12345, 
 					y.init=NULL, process.counts=TRUE, logfile=NULL) {
 
   ## Error checking and variable processing
@@ -92,7 +93,7 @@ celda_G = function(counts, L, beta=1, delta=1, gamma=1,
   do.gene.split = TRUE
   while(iter <= max.iter & num.iter.without.improvement <= stop.iter) {
 
-	next.y = cG.calcGibbsProbY(counts.t=counts.t, n.C.by.TS=n.C.by.TS, n.by.TS=n.by.TS, nG.by.TS=nG.by.TS, n.by.G=n.by.G, y=y, nG=nG, L=L, beta=beta, delta=delta, gamma=gamma)
+	next.y = cG.calcGibbsProbY(counts.t=counts.t, n.C.by.TS=n.C.by.TS, n.by.TS=n.by.TS, nG.by.TS=nG.by.TS, n.by.G=n.by.G, y=y, nG=nG, L=L, beta=beta, delta=delta, gamma=gamma, random.state.order=random.state.order)
 	n.C.by.TS = next.y$n.C.by.TS
 	nG.by.TS = next.y$nG.by.TS
 	n.by.TS = next.y$n.by.TS
@@ -160,8 +161,9 @@ celda_G = function(counts, L, beta=1, delta=1, gamma=1,
 # @param gamma The Dirichlet distribution parameter for Psi; adds a pseudocount to each gene within each transcriptional state.
 # @param delta The Dirichlet distribution parameter for Eta; adds a gene pseudocount to the numbers of genes each state.
 # @param beta Vector of non-zero concentration parameters for cluster <-> gene assignment Dirichlet distribution
+# @param random.state.order Whether to iterate over the genes in a random order. Defaults to TRUE
 # @keywords log likelihood
-cG.calcGibbsProbY = function(counts.t, n.C.by.TS, n.by.TS, nG.by.TS, n.by.G, y, L, nG, beta, delta, gamma, do.sample=TRUE) {
+cG.calcGibbsProbY = function(counts.t, n.C.by.TS, n.by.TS, nG.by.TS, n.by.G, y, L, nG, beta, delta, gamma, do.sample=TRUE, random.state.order=TRUE) {
 
   ## Set variables up front outside of loop
   probs = matrix(NA, ncol=nG, nrow=L)
@@ -169,7 +171,11 @@ cG.calcGibbsProbY = function(counts.t, n.C.by.TS, n.by.TS, nG.by.TS, n.by.G, y, 
   temp.n.by.TS = n.by.TS 
   temp.n.C.by.TS = n.C.by.TS
 
-  ix <- sample(1:nG)
+  if(isTRUE(random.state.order)){
+    ix = sample(1:nG)
+  } else {
+    ix = rev(1:nG)
+  }  
   for(i in ix) {
 	  
 	## Subtract current gene counts from matrices
