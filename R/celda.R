@@ -68,9 +68,9 @@ celda = function(counts, model, sample.label=NULL, K=NULL, L=NULL, alpha=1, beta
   params.list$count.checksum = count.checksum
    
    res.list = foreach(i = 1:nrow(run.params), .export=model, .combine = c, .multicombine=TRUE) %dopar% {
-    chain.params = params.list
-    if (!is.null(K)) chain.params = append(chain.params, run.params[i, "K"])
-    if (!is.null(L)) chain.params = append(chain.params, run.params[i, "L"])
+    chain.params = append(params.list,
+                          as.list(dplyr::select(run.params[i,],
+                                                dplyr::matches("K|L"))))
     chain.params$seed = all.seeds[ifelse(i %% nchains == 0, nchains, i %% nchains)]
     
     if (isTRUE(verbose)) {
