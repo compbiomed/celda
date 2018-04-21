@@ -83,7 +83,7 @@ celda = function(counts, model, sample.label=NULL, K=NULL, L=NULL, alpha=1, beta
       res = suppressMessages(do.call(model, chain.params))
     }
     return(list(res))
-  })
+  }
   parallel::stopCluster(cl)
   celda.res = list(run.params=run.params, res.list=res.list, 
                    content.type=model, count.checksum=count.checksum)
