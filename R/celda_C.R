@@ -48,7 +48,7 @@
 #' @param logfile If NULL, messages will be displayed as normal. If set to a file name, messages will be redirected messages to the file. Default NULL.
 #' @return An object of class celda_C with clustering results and Gibbs sampling statistics
 #' @export
-celda_C_test = function(counts, sample.label=NULL, K, alpha=1, beta=1,
+celda_C = function(counts, sample.label=NULL, K, alpha=1, beta=1,
                         stop.iter = 10, max.iter=200, split.on.iter=10, split.on.last=TRUE,
                         random.state.order=TRUE, count.checksum=NULL, seed=12345,
                         z.init = NULL, process.counts=TRUE, logfile=NULL) {
@@ -91,7 +91,7 @@ celda_C_test = function(counts, sample.label=NULL, K, alpha=1, beta=1,
   do.cell.split = TRUE
   while(iter <= max.iter & num.iter.without.improvement <= stop.iter) {
     
-    next.z = cCTest.calcGibbsProbZ(counts=counts, m.CP.by.S=m.CP.by.S, n.G.by.CP=n.G.by.CP, n.by.C=n.by.C, n.CP=n.CP, z=z, s=s, K=K, nG=nG, nM=nM, alpha=alpha, beta=beta, random.state.order=random.state.order)
+    next.z = cC.calcGibbsProbZ(counts=counts, m.CP.by.S=m.CP.by.S, n.G.by.CP=n.G.by.CP, n.by.C=n.by.C, n.CP=n.CP, z=z, s=s, K=K, nG=nG, nM=nM, alpha=alpha, beta=beta, random.state.order=random.state.order)
     m.CP.by.S = next.z$m.CP.by.S
     n.G.by.CP = next.z$n.G.by.CP
     n.CP = next.z$n.CP
@@ -151,9 +151,9 @@ celda_C_test = function(counts, sample.label=NULL, K, alpha=1, beta=1,
 
 
 # Gibbs sampling for the celda_C Model
-cCTest.calcGibbsProbZ = function(counts, m.CP.by.S, n.G.by.CP, n.by.C, n.CP, z, s, K, nG, nM, alpha, beta, do.sample=TRUE, random.state.order=TRUE) {
+cC.calcGibbsProbZ = function(counts, m.CP.by.S, n.G.by.CP, n.by.C, n.CP, z, s, K, nG, nM, alpha, beta, do.sample=TRUE, random.state.order=TRUE) {
   
-  print("calling optimized")
+  #print("calling optimized")
   ## Set variables up front outside of loop  
   probs = matrix(NA, ncol=nM, nrow=K)
   temp.n.G.by.CP = n.G.by.CP
@@ -401,7 +401,7 @@ clusterProbability.celda_C = function(celda.mod, counts, log=FALSE, ...) {
   
   p = cC.decomposeCounts(counts, s, z, K)  
   
-  next.z = cCTest.calcGibbsProbZ(counts=counts, m.CP.by.S=p$m.CP.by.S, n.G.by.CP=p$n.G.by.CP, n.by.C=p$n.by.C, n.CP=p$n.CP, z=z, s=s, K=K, nG=p$nG, nM=p$nM, alpha=alpha, beta=beta, do.sample=FALSE)  
+  next.z = cC.calcGibbsProbZ(counts=counts, m.CP.by.S=p$m.CP.by.S, n.G.by.CP=p$n.G.by.CP, n.by.C=p$n.by.C, n.CP=p$n.CP, z=z, s=s, K=K, nG=p$nG, nM=p$nM, alpha=alpha, beta=beta, do.sample=FALSE)  
   z.prob = t(next.z$probs)
   
   if(!isTRUE(log)) {

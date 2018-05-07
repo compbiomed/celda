@@ -53,7 +53,7 @@
 #' @param logfile The name of the logfile to redirect messages to.
 #' @param random.state.order Whether to sample genes / cells in a random order when performing Gibbs sampling. Defaults to TRUE.
 #' @export
-celda_CG_test = function(counts, sample.label=NULL, K, L,
+celda_CG = function(counts, sample.label=NULL, K, L,
                          alpha=1, beta=1, delta=1, gamma=1, 
                          stop.iter = 10, max.iter=200, split.on.iter=10, split.on.last=TRUE,
                          seed=12345, count.checksum=NULL,
@@ -109,7 +109,7 @@ celda_CG_test = function(counts, sample.label=NULL, K, L,
     ## Gibbs sampling for each cell
     n.TS.by.C = rowsum.y(counts, y=y, L=L)
     n.TS.by.CP = t(n.CP.by.TS)
-    next.z = cCTest.calcGibbsProbZ(counts=n.TS.by.C, m.CP.by.S=m.CP.by.S, n.G.by.CP=n.TS.by.CP, n.CP=n.CP, n.by.C=n.by.C, z=z, s=s, K=K, nG=L, nM=nM, alpha=alpha, beta=beta, random.state.order=random.state.order)
+    next.z = cC.calcGibbsProbZ(counts=n.TS.by.C, m.CP.by.S=m.CP.by.S, n.G.by.CP=n.TS.by.CP, n.CP=n.CP, n.by.C=n.by.C, z=z, s=s, K=K, nG=L, nM=nM, alpha=alpha, beta=beta, random.state.order=random.state.order)
     m.CP.by.S = next.z$m.CP.by.S
     n.TS.by.CP = next.z$n.G.by.CP
     n.CP = next.z$n.CP
@@ -509,7 +509,7 @@ clusterProbability.celda_CG = function(celda.mod, counts, log=FALSE, ...) {
   p = cCG.decomposeCounts(counts, s, z, y, K, L)
   
   ## Gibbs sampling for each cell
-  next.z = cCTest.calcGibbsProbZ(counts=p$n.TS.by.C, m.CP.by.S=p$m.CP.by.S, n.G.by.CP=t(p$n.CP.by.TS), n.CP=p$n.CP, n.by.C=p$n.by.C, z=z, s=s, K=K, nG=L, nM=p$nM, alpha=alpha, beta=beta, do.sample=FALSE)
+  next.z = cC.calcGibbsProbZ(counts=p$n.TS.by.C, m.CP.by.S=p$m.CP.by.S, n.G.by.CP=t(p$n.CP.by.TS), n.CP=p$n.CP, n.by.C=p$n.by.C, z=z, s=s, K=K, nG=L, nM=p$nM, alpha=alpha, beta=beta, do.sample=FALSE)
   z.prob = t(next.z$probs)
   
   ## Gibbs sampling for each gene
