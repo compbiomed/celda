@@ -153,11 +153,11 @@ celda_C = function(counts, sample.label=NULL, K, alpha=1, beta=1,
 # Gibbs sampling for the celda_C Model
 cC.calcGibbsProbZ = function(counts, m.CP.by.S, n.G.by.CP, n.by.C, n.CP, z, s, K, nG, nM, alpha, beta, do.sample=TRUE, random.state.order=TRUE) {
   
-  #print("calling optimized")
+  print("calling optimized")
   ## Set variables up front outside of loop  
   probs = matrix(NA, ncol=nM, nrow=K)
-  temp.n.G.by.CP = n.G.by.CP
-  temp.n.CP = n.CP
+  #temp.n.G.by.CP = n.G.by.CP
+  #temp.n.CP = n.CP
   
   if(isTRUE(random.state.order)) {
     ix = sample(1:nM)
@@ -165,38 +165,41 @@ cC.calcGibbsProbZ = function(counts, m.CP.by.S, n.G.by.CP, n.by.C, n.CP, z, s, K
     ix = rev(1:nM)
   } 
   
-  start_time = Sys.time()
+  #start_time = Sys.time()
   for(i in ix) {
     ## Subtract current cell counts from matrices
     m.CP.by.S[z[i],s[i]] = m.CP.by.S[z[i],s[i]] - 1L
     n.G.by.CP[,z[i]] = n.G.by.CP[,z[i]] - counts[,i]
     n.CP[z[i]] = n.CP[z[i]] - n.by.C[i]
     
-    ## Calculate probabilities for each state
     
-    g = lgamma(n.G.by.CP + beta)
-    g2 = lgamma(n.CP + (nG * beta))
+    g_col_sums_vector = vector(length=K) 
+    g2_elements_vector = vector(length=K)
+    for(j in 1:K) {
+      g_col_sums_vector[j] = sum(lgamma(n.G.by.CP[,j] + beta)) # Calculate lgamma for every column of n.G.by.CP
+      g2_elements_vector[j] = lgamma(n.CP[j] + (nG * beta)) # Calculate lgamma for every j element in n.CP
+    }
+    g_sum = sum(g_col_sums_vector) # sum of n.G.by.CP gammas
+    g2_sum = sum(g2_elements_vector) # sum of n.CP gammas
+    #g2_sum = sum(lgamma(n.CP + (nG * beta))) 
     
     for(j in 1:K) {
-      temp.n.G.by.CP = n.G.by.CP
-      temp.n.G.by.CP[,j] = temp.n.G.by.CP[,j] + counts[,i]
-      temp.n.CP = n.CP
-      temp.n.CP[j] = temp.n.CP[j] + n.by.C[i]
+      #temp.n.G.by.CP = n.G.by.CP
+      #temp.n.G.by.CP[,j] = temp.n.G.by.CP[,j] + counts[,i]
+      #temp.n.CP = n.CP
+      #temp.n.CP[j] = temp.n.CP[j] + n.by.C[i]
       
-      g_prime_col = lgamma(temp.n.G.by.CP[,j] + beta)
-      temp_g = g
-      temp_g[,j] = g_prime_col
+      new_col_g_sum = sum(lgamma((n.G.by.CP[,j] + counts[,i]) + beta)) # calculate new sum of COLUMN j 
+      new_g_sum = g_sum - g_col_sums_vector[j] + new_col_g_sum # old sum - sum of old column + sum of new column
       
-      g2_prime_col = lgamma(temp.n.CP[j] + (nG * beta))
-      temp_g2 = g2
-      temp_g2[j] = g2_prime_col
+      new_g2_elememt = lgamma((n.CP[j] + n.by.C[i]) + (nG * beta)) # calculate new sum of ELEMENT j
+      new_g2_sum = g2_sum - g2_elements_vector[j] + new_g2_elememt # old sum - old element + new element
       
-      ## Theta simplified + Phi Numberator - Phi Denominator
-      probs[j,i] = log(m.CP.by.S[j,s[i]] + alpha) + 
-        sum(temp_g) - sum(temp_g2)
+      probs[j,i] = log(m.CP.by.S[j,s[i]] + alpha) + new_g_sum - new_g2_sum
+      # probs[j,i] = 	log(m.CP.by.S[j,s[i]] + alpha) +		## Theta simplified
+      #   sum(lgamma(temp.n.G.by.CP + beta)) -	## Phi Numerator
+      #   sum(lgamma(temp.n.CP + (nG * beta)))	## Phi Denominator
     }
-    end_time = Sys.time()
-    #print(end_time - start_time)
     
     ## Sample next state and add back counts
     if(isTRUE(do.sample)) z[i] = sample.ll(probs[,i])
@@ -205,10 +208,8 @@ cC.calcGibbsProbZ = function(counts, m.CP.by.S, n.G.by.CP, n.by.C, n.CP, z, s, K
     n.G.by.CP[,z[i]] = n.G.by.CP[,z[i]] + counts[,i]
     n.CP[z[i]] = n.CP[z[i]] + n.by.C[i]
   }
-  #print(total_time)
-  
-  
-  
+  #end_time = Sys.time()
+  #print(end_time - start_time)
   return(list(m.CP.by.S=m.CP.by.S, n.G.by.CP=n.G.by.CP, n.CP=n.CP, z=z, probs=probs))
 }
 
