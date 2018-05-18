@@ -167,9 +167,10 @@ cG.calcGibbsProbY = function(counts.t, n.C.by.TS, n.by.TS, nG.by.TS, n.by.G, y, 
   
   ## Set variables up front outside of loop
   probs = matrix(NA, ncol=nG, nrow=L)
-  temp.nG.by.TS = nG.by.TS 
-  temp.n.by.TS = n.by.TS 
-  temp.n.C.by.TS = n.C.by.TS
+  #temp.nG.by.TS = nG.by.TS 
+  #temp.n.by.TS = n.by.TS 
+  #temp.n.C.by.TS = n.C.by.TS
+  lgamma_of_delta = lgamma(delta)
   
   if(isTRUE(random.state.order)){
     ix = sample(1:nG)
@@ -183,28 +184,85 @@ cG.calcGibbsProbY = function(counts.t, n.C.by.TS, n.by.TS, nG.by.TS, n.by.G, y, 
     n.by.TS[y[i]] = n.by.TS[y[i]] - n.by.G[i]
     n.C.by.TS[,y[i]] = n.C.by.TS[,y[i]] - counts.t[,i]
     
+    n.C.by.TS_sums_vector = vector(length=L)
+    n.by.TS_vector = vector(length=L)
+    for(j in 1:L) {
+      n.C.by.TS_sums_vector[j] = sum(lgamma(n.C.by.TS[,j] + beta)) #sum of lgamma of column
+      n.by.TS_vector[j] = n.by.TS[j] + n.by.G[i]
+    }
+    n.C.by.TS_sum = sum(n.C.by.TS_sums_vector) #3 sum(lgamma(temp.n.C.by.TS + beta))
+
+    # Add 1 to every 0 in the matrix
+    temp.nG.by.TS = nG.by.TS
+    temp.nG.by.TS[temp.nG.by.TS == 0L] = 1L
+    nG_sum = sum(temp.nG.by.TS)
+    nG_plus_gamma_sum = sum(temp.nG.by.TS + gamma)
+    nG.by.TS_no_zero_gamma_sum = sum(lgamma(temp.nG.by.TS + gamma))
+    nG.by.TS_no_zero_delta_sum = sum(lgamma(temp.nG.by.TS * delta))
+    n.by.TS_plus_nG.by.TS_sum = sum(lgamma(n.by.TS + (temp.nG.by.TS * delta)))
+    # nG_sum = sum(nG.by.TS[nG.by.TS == 0L] + 1L) + sum(nG.by.TS[nG.by.TS != 0L])
+    # nG_plus_gamma_sum = sum(nG.by.TS[nG.by.TS == 0L] + 1L + gamma) + sum(nG.by.TS[nG.by.TS != 0L] + gamma)
+    # nG.by.TS_no_zero_gamma_sum = sum(lgamma(nG.by.TS[nG.by.TS == 0L] + 1L + gamma)) + sum(lgamma(nG.by.TS[nG.by.TS != 0L] + gamma)) #1 sum(lgamma(pseudo.nG.by.TS + gamma))
+    # nG.by.TS_no_zero_delta_sum = sum(lgamma((nG.by.TS[nG.by.TS == 0L] + 1L) * delta)) + sum(lgamma(nG.by.TS[nG.by.TS != 0L] * delta)) #4 sum(lgamma(pseudo.nG.by.TS * delta))
+    # n.by.TS_plus_nG.by.TS_sum = sum(lgamma(n.by.TS + ((nG.by.TS[nG.by.TS == 0L] + 1L) * delta))) #6 sum(lgamma(temp.n.by.TS + (pseudo.nG.by.TS * delta))) this is incorrect
+
     ## Calculate probabilities for each state
     for(j in 1:L) {
       
-      temp.nG.by.TS = nG.by.TS 
-      temp.n.by.TS = n.by.TS 
-      temp.n.C.by.TS = n.C.by.TS
+      # temp.nG.by.TS = nG.by.TS
+      # temp.n.by.TS = n.by.TS
+      # temp.n.C.by.TS = n.C.by.TS
+      # 
+      # temp.nG.by.TS[j] = temp.nG.by.TS[j] + 1L
+      # temp.n.by.TS[j] = temp.n.by.TS[j] + n.by.G[i]
+      # temp.n.C.by.TS[,j] = temp.n.C.by.TS[,j] + counts.t[,i]
+      # 
+      # pseudo.nG.by.TS = temp.nG.by.TS
+      # pseudo.nG.by.TS[temp.nG.by.TS == 0L] = 1L
+      # pseudo.nG = sum(pseudo.nG.by.TS)
+      # 
+      # print(lgamma(sum(pseudo.nG.by.TS + gamma)))
+      # print(sum(lgamma(sum(pseudo.nG.by.TS + gamma))))
+      # 
+      # probs[j,i] <- 	sum(lgamma(pseudo.nG.by.TS + gamma)) -
+      #   sum(lgamma(sum(pseudo.nG.by.TS + gamma))) +
+      #   sum(lgamma(temp.n.C.by.TS + beta)) +
+      #   sum(lgamma(pseudo.nG.by.TS * delta)) -
+      #   (pseudo.nG * lgamma(delta)) -
+      #   sum(lgamma(temp.n.by.TS + (pseudo.nG.by.TS * delta)))
       
-      temp.nG.by.TS[j] = temp.nG.by.TS[j] + 1L      
-      temp.n.by.TS[j] = temp.n.by.TS[j] + n.by.G[i]
-      temp.n.C.by.TS[,j] = temp.n.C.by.TS[,j] + counts.t[,i]
-      
-      pseudo.nG.by.TS = temp.nG.by.TS
-      pseudo.nG.by.TS[temp.nG.by.TS == 0L] = 1L
-      pseudo.nG = sum(pseudo.nG.by.TS)
-      
-      probs[j,i] <- 	sum(lgamma(pseudo.nG.by.TS + gamma)) -
-        sum(lgamma(sum(pseudo.nG.by.TS + gamma))) +
-        sum(lgamma(temp.n.C.by.TS + beta)) +
-        sum(lgamma(pseudo.nG.by.TS * delta)) -
-        (pseudo.nG * lgamma(delta)) -
-        sum(lgamma(temp.n.by.TS + (pseudo.nG.by.TS * delta)))
-      
+      #1 sum(lgamma(pseudo.nG.by.TS + gamma))
+      old_nG.by.TS_gamma = lgamma(nG.by.TS[j] + gamma)
+      new_nG.by.TS_gamma = lgamma(nG.by.TS[j] + 1L + gamma)
+      new_nG.by.TS_gamma_sum = nG.by.TS_no_zero_gamma_sum - old_nG.by.TS_gamma + new_nG.by.TS_gamma
+
+      #2 sum(lgamma(sum(pseudo.nG.by.TS + gamma)))
+      new_nG_plus_gamma_sum = nG_plus_gamma_sum - (nG.by.TS[j] + gamma) + (nG.by.TS[j] + 1L + gamma)
+
+      #3 sum(lgamma(temp.n.C.by.TS + beta))
+      new_n.C.by.TS_col_sum = sum(lgamma((n.C.by.TS[,j] + counts.t[,i]) + beta))
+      new_n.C.by.TS_sum = n.C.by.TS_sum - n.C.by.TS_sums_vector[j] + new_n.C.by.TS_col_sum
+
+      #4 sum(lgamma(pseudo.nG.by.TS * delta))
+      old_nG.by.TS_delta = lgamma(nG.by.TS[j] * delta)
+      new_nG.by.TS_delta = lgamma((nG.by.TS[j] + 1L) * delta)
+      new_nG.by.TS_delta_sum = nG.by.TS_no_zero_delta_sum - old_nG.by.TS_delta + new_nG.by.TS_delta
+
+      #5 pseudo.nG * lgamma(delta)
+      new_nG_sum = nG_sum - 1L # nG_sum - nG.by.TS[j] + nG.by.TS[j] + 1L
+
+      #6 sum(lgamma(temp.n.by.TS + (pseudo.nG.by.TS * delta)))
+      old_n.by.TS_plus_nG.by.TS = sum(lgamma(n.by.TS[j] + (nG.by.TS[j] * delta)))
+      new_n.by.TS_plus_nG.by.TS = sum(lgamma(n.by.TS_vector[j] + ((nG.by.TS[j] + 1L) * delta)))
+      new_n.by.TS_plus_nG.by.TS_sum = n.by.TS_plus_nG.by.TS_sum - old_n.by.TS_plus_nG.by.TS + new_n.by.TS_plus_nG.by.TS
+
+      probs[j,i] <- 	new_nG.by.TS_gamma_sum -
+        sum(lgamma(new_nG_plus_gamma_sum)) + # do we need this outer sum?
+        new_n.C.by.TS_sum +
+        new_nG.by.TS_delta_sum -
+        (new_nG_sum * lgamma_of_delta) -
+        new_n.by.TS_plus_nG.by.TS_sum
+
     }
     
     ## Sample next state and add back counts
