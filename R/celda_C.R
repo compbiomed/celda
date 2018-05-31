@@ -222,7 +222,7 @@ cC.calcEMProbZ = function(counts, m.CP.by.S, n.G.by.CP, n.by.C, n.CP, z, s, K, n
   phi = log(normalizeCounts(n.G.by.CP + beta, scale.factor=1))
   
   ## Maximization to find best label for each cell
-  probs = eigenMapMatMultInt(phi, counts) + theta[, s]  
+  probs = eigenMatMultInt(phi, counts) + theta[, s]  
   #probs = (t(phi) %*% counts) + theta[, s]  
   z = apply(probs, 2, which.max)
 
