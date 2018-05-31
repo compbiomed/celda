@@ -118,7 +118,7 @@ celda_C = function(counts, sample.label=NULL, K, alpha=1, beta=1,
       ## Re-calculate variables
       z = res$z
       m.CP.by.S = matrix(as.integer(table(factor(z, levels=1:K), s)), ncol=nS)
-      n.G.by.CP = t(rowsum.z(counts, z=z, K=K))
+      n.G.by.CP = t(colSumByGroup(counts, z=z, K=K))
       n.CP = as.integer(colSums(n.G.by.CP))
     }
 
@@ -396,7 +396,7 @@ cC.decomposeCounts = function(counts, s, z, K) {
   nM = ncol(counts)
 
   m.CP.by.S = matrix(as.integer(table(factor(z, levels=1:K), s)), ncol=nS)
-  n.G.by.CP = t(rowsum.z(counts, z=z, K=K))
+  n.G.by.CP = t(colSumByGroup(counts, z=z, K=K))
   n.CP = as.integer(colSums(n.G.by.CP))
   n.by.C = as.integer(colSums(counts))
   
