@@ -292,6 +292,7 @@ simulateCells.celda_G = function(model, C=100, N.Range=c(500,5000),  G=1000,
                 beta=beta, delta=delta, gamma=gamma, seed=seed, 
                 names=names, count.checksum=NULL)
   class(result) = "celda_G" 
+  storage.mode(cell.counts) = "integer"
   result = reorder.celda_G(counts = cell.counts, res = result)  
   
   return(list(y=result$y, counts=processCounts(cell.counts), L=L, beta=beta, delta=delta, gamma=gamma, phi=phi, psi=psi, eta=eta, seed=seed))
