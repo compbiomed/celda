@@ -223,7 +223,6 @@ cC.calcEMProbZ = function(counts, m.CP.by.S, n.G.by.CP, n.by.C, n.CP, z, s, K, n
   phi = log(normalizeCounts(n.G.by.CP + beta, scale.factor=1))
   
   ## Maximization to find best label for each cell
-  if (nrow(phi) != nrow(counts)) stop(paste("Phi and counts have mismatched dimensions. Phi:", nrow(phi), " counts:", nrow(counts), "n.g.cp", nrow(n.G.by.CP)))
   probs = eigenMatMultInt(phi, counts) + theta[, s]  
   #probs = (t(phi) %*% counts) + theta[, s]  
   z = apply(probs, 2, which.max)

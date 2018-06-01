@@ -472,7 +472,7 @@ calculateLoglikFromVariables.celda_CG = function(counts, sample.label, z, y, K, 
 cCG.decomposeCounts = function(counts, s, z, y, K, L) {
   nS = length(unique(s))
   m.CP.by.S = matrix(as.integer(table(factor(z, levels=1:K), s)), ncol=nS)
-  n.TS.by.C = rowSumByGroup(counts, group=y, L=L)
+    n.TS.by.C = rowSumByGroup(counts, group=y, L=L)
   n.CP.by.TS = t(colSumByGroup(n.TS.by.C, group=z, K=K))  # TODO Refactor celda_CG
   n.CP = as.integer(rowSums(n.CP.by.TS))
   n.by.G = as.integer(rowSums(counts))
