@@ -91,7 +91,6 @@ celda_C = function(counts, sample.label=NULL, K, alpha=1, beta=1,
   num.iter.without.improvement = 0L
   do.cell.split = TRUE
   while(iter <= max.iter & num.iter.without.improvement <= stop.iter) {
-    message(paste("Iteration: ", iter))
     
 #   next.z = cC.calcGibbsProbZ(counts=counts, m.CP.by.S=m.CP.by.S, n.G.by.CP=n.G.by.CP, n.by.C=n.by.C, n.CP=n.CP, z=z, s=s, K=K, nG=nG, nM=nM, alpha=alpha, beta=beta)
 #	next.z = cC.calcEMProbZ(counts=counts, m.CP.by.S=m.CP.by.S, n.G.by.CP=n.G.by.CP, n.by.C=n.by.C, n.CP=n.CP, z=z, s=s, K=K, nG=nG, nM=nM, alpha=alpha, beta=beta)
@@ -119,7 +118,7 @@ celda_C = function(counts, sample.label=NULL, K, alpha=1, beta=1,
       ## Re-calculate variables
       z = res$z
       m.CP.by.S = matrix(as.integer(table(factor(z, levels=1:K), s)), ncol=nS)
-      n.G.by.CP = colSumByGroup(counts, group=z, K=K)
+      n.G.by.CP = t(colSumByGroup(counts, z=z, K=K))
       n.CP = as.integer(colSums(n.G.by.CP))
     }
 
@@ -223,7 +222,6 @@ cC.calcEMProbZ = function(counts, m.CP.by.S, n.G.by.CP, n.by.C, n.CP, z, s, K, n
   phi = log(normalizeCounts(n.G.by.CP + beta, scale.factor=1))
   
   ## Maximization to find best label for each cell
-  if (nrow(phi) != nrow(counts)) stop(paste("Phi and counts have mismatched dimensions. Phi:", nrow(phi), " counts:", nrow(counts), "n.g.cp", nrow(n.G.by.CP)))
   probs = eigenMatMultInt(phi, counts) + theta[, s]  
   #probs = (t(phi) %*% counts) + theta[, s]  
   z = apply(probs, 2, which.max)
@@ -398,7 +396,7 @@ cC.decomposeCounts = function(counts, s, z, K) {
   nM = ncol(counts)
 
   m.CP.by.S = matrix(as.integer(table(factor(z, levels=1:K), s)), ncol=nS)
-  n.G.by.CP = colSumByGroup(counts, group=z, K=K)
+  n.G.by.CP = t(colSumByGroup(counts, z=z, K=K))
   n.CP = as.integer(colSums(n.G.by.CP))
   n.by.C = as.integer(colSums(counts))
   
