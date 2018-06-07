@@ -78,9 +78,28 @@ celda_CG = function(counts, sample.label=NULL, K, L,
   z = initialize.cluster(K, ncol(counts), initial = z.init, fixed = NULL, seed=seed)
   y = initialize.cluster(L, nrow(counts), initial = y.init, fixed = NULL, seed=seed)
   z.best = z
-  y.best = y  
+  y.best = y 
   
   ## Calculate counts one time up front
+  previousZ <<- integer(length(z)) # vector of 0s
+  previousY <<- integer(length(y))
+  previousS <<- 0
+  count <<- 0
+  eqCount <<- 0
+  zChanged <<- TRUE
+  yChanged <<- TRUE
+  sChanged <<- TRUE
+  global_m.CP.by.S <<- matrix(as.integer(table(factor(z, levels=1:K), s)), ncol=length(unique(s)))
+  global_nG.by.TS <<- 0
+  global_n.TS.by.C <<- 0
+  global_n.CP.by.TS <<- 0
+  global_n.CP.by.G <<- 0
+  global_n.by.TS <<- 0
+  global_nS <<- 0
+  global_G_sum <<- 0
+  global_C_sum <<- 0
+  global_flag <<- FALSE
+  
   p = cCG.decomposeCounts(counts, s, z, y, K, L)
   m.CP.by.S = p$m.CP.by.S
   n.TS.by.C = p$n.TS.by.C
@@ -199,6 +218,8 @@ celda_CG = function(counts, sample.label=NULL, K, L,
   
   ## Peform reordering on final Z and Y assigments:
   result = reorder.celda_CG(counts = counts, res = result)
+  print(paste0("number of times decomposeCount was called : ", count))
+  print(paste0("number of times z was same as previousZ count in decomposeCount: ", eqCount))
   return(result)
 }
 
@@ -467,17 +488,65 @@ calculateLoglikFromVariables.celda_CG = function(counts, sample.label, z, y, K, 
 #' @param y A numeric vector of gene cluster assignments
 #' @param K The number of cell clusters
 #' @param L The number of gene clusters
+
 cCG.decomposeCounts = function(counts, s, z, y, K, L) {
-  nS = length(unique(s))
-  m.CP.by.S = matrix(as.integer(table(factor(z, levels=1:K), s)), ncol=nS)
-  n.TS.by.C = rowsum.y(counts, y=y, L=L)
-  n.CP.by.TS = rowsum.z(n.TS.by.C, z=z, K=K)
+  yChanged <<- if(identical(previousY, y)) FALSE else TRUE
+  sChanged <<- if(identical(previousS, s)) FALSE else TRUE
+  if(identical(previousZ, z)){
+    eqCount <<- eqCount + 1
+    zChanged <<- FALSE
+  }else{
+    #print(ifelse(previousZ==z, 0, z)) #print values of z where elements differed
+    print(count)
+    zChanged <<- TRUE
+  }
+  previousZ <<- z
+  previousY <<- y 
+  previousS <<- s
+  count <<- count + 1
+  
+  if(global_flag){
+    n.by.G = global_G_sum
+    n.by.C = global_C_sum
+  }
+  else{
+    global_G_sum <<- as.integer(rowSums(counts))
+    n.by.G = global_G_sum
+    global_C_sum <<- as.integer(colSums(counts))
+    n.by.C = global_C_sum
+    global_flag = TRUE
+  }
+  
+  if(sChanged){
+    global_nS <<- length(unique(s))
+  }
+  nS = global_nS
+  
+  if(yChanged){
+    global_n.TS.by.C <<- rowsum.y(counts, y=y, L=L)
+    global_nG.by.TS <<- as.integer(table(factor(y, 1:L)))
+    global_n.by.TS <<- as.integer(rowsum.y(matrix(n.by.G,ncol=1), y=y, L=L))
+  }
+  n.TS.by.C = global_n.TS.by.C
+  nG.by.TS = global_nG.by.TS
+  n.by.TS = global_n.by.TS
+  
+  if(zChanged){
+    global_n.CP.by.G <<- rowsum.z(counts, z=z, K=K)
+  }
+  
+  if(zChanged || yChanged){
+    global_n.CP.by.TS <<- rowsum.z(n.TS.by.C, z=z, K=K)
+  }
+  
+  if(zChanged || sChanged){
+    global_m.CP.by.S <<- matrix(as.integer(table(factor(z, levels=1:K), s)), ncol=nS)
+  }
+  
+  m.CP.by.S = global_m.CP.by.S
+  n.CP.by.TS = global_n.CP.by.TS
+  n.CP.by.G = global_n.CP.by.G
   n.CP = as.integer(rowSums(n.CP.by.TS))
-  n.by.G = as.integer(rowSums(counts))
-  n.by.C = as.integer(colSums(counts))
-  n.by.TS = as.integer(rowsum.y(matrix(n.by.G,ncol=1), y=y, L=L))
-  nG.by.TS = as.integer(table(factor(y, 1:L)))
-  n.CP.by.G = rowsum.z(counts, z=z, K=K)
   
   nG = nrow(counts)
   nM = ncol(counts)

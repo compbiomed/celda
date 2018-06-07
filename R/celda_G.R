@@ -167,8 +167,8 @@ cG.calcGibbsProbY = function(counts.t, n.C.by.TS, n.by.TS, nG.by.TS, n.by.G, y, 
   
   ## Set variables up front outside of loop
   probs = matrix(NA, ncol=nG, nrow=L)
-  #temp.nG.by.TS = nG.by.TS 
-  #temp.n.by.TS = n.by.TS 
+  #temp.nG.by.TS = nG.by.TS
+  #temp.n.by.TS = n.by.TS
   #temp.n.C.by.TS = n.C.by.TS
   lgamma_of_delta = lgamma(delta)
   
@@ -213,9 +213,6 @@ cG.calcGibbsProbY = function(counts.t, n.C.by.TS, n.by.TS, nG.by.TS, n.by.G, y, 
       # pseudo.nG.by.TS = temp.nG.by.TS
       # pseudo.nG.by.TS[temp.nG.by.TS == 0L] = 1L
       # pseudo.nG = sum(pseudo.nG.by.TS)
-      # 
-      # print(lgamma(sum(pseudo.nG.by.TS + gamma)))
-      # print(sum(lgamma(sum(pseudo.nG.by.TS + gamma))))
       # 
       # probs[j,i] <- 	sum(lgamma(pseudo.nG.by.TS + gamma)) -
       #   sum(lgamma(sum(pseudo.nG.by.TS + gamma))) +

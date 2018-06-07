@@ -156,8 +156,8 @@ cC.calcGibbsProbZ = function(counts, m.CP.by.S, n.G.by.CP, n.by.C, n.CP, z, s, K
   #print("calling optimized")
   ## Set variables up front outside of loop  
   probs = matrix(NA, ncol=nM, nrow=K)
-  temp.n.G.by.CP = n.G.by.CP
-  temp.n.CP = n.CP
+  #temp.n.G.by.CP = n.G.by.CP
+  #temp.n.CP = n.CP
   
   if(isTRUE(random.state.order)) {
     ix = sample(1:nM)
@@ -165,7 +165,7 @@ cC.calcGibbsProbZ = function(counts, m.CP.by.S, n.G.by.CP, n.by.C, n.CP, z, s, K
     ix = rev(1:nM)
   } 
   
-  start_time = Sys.time()
+  #start_time = Sys.time()
   for(i in ix) {
     ## Subtract current cell counts from matrices
     m.CP.by.S[z[i],s[i]] = m.CP.by.S[z[i],s[i]] - 1L
@@ -181,16 +181,16 @@ cC.calcGibbsProbZ = function(counts, m.CP.by.S, n.G.by.CP, n.by.C, n.CP, z, s, K
     g_sum = sum(g_col_sums_vector) # sum of n.G.by.CP gammas
     g2_sum = sum(g2_elements_vector) # sum of n.CP gammas
     
-    #for(j in 1:K) {
-    probs[,i] = foreach(j=1:K, .combine='c') %dopar% {
-      temp.n.G.by.CP = n.G.by.CP
-      temp.n.G.by.CP[,j] = temp.n.G.by.CP[,j] + counts[,i]
-      temp.n.CP = n.CP
-      temp.n.CP[j] = temp.n.CP[j] + n.by.C[i]
-      
-      probs[j,i] = 	log(m.CP.by.S[j,s[i]] + alpha) +		## Theta simplified
-        sum(lgamma(temp.n.G.by.CP + beta)) -	## Phi Numerator
-        sum(lgamma(temp.n.CP + (nG * beta)))	## Phi Denominator
+    for(j in 1:K) {
+    #probs[,i] = foreach(j=1:K, .combine='c') %dopar% {
+      # temp.n.G.by.CP = n.G.by.CP
+      # temp.n.G.by.CP[,j] = temp.n.G.by.CP[,j] + counts[,i]
+      # temp.n.CP = n.CP
+      # temp.n.CP[j] = temp.n.CP[j] + n.by.C[i]
+      # 
+      # probs[j,i] = 	log(m.CP.by.S[j,s[i]] + alpha) +		## Theta simplified
+      #   sum(lgamma(temp.n.G.by.CP + beta)) -	## Phi Numerator
+      #   sum(lgamma(temp.n.CP + (nG * beta)))	## Phi Denominator
       
       new_col_g_sum = sum(lgamma((n.G.by.CP[,j] + counts[,i]) + beta)) # calculate new sum of COLUMN j
       new_g_sum = g_sum - g_col_sums_vector[j] + new_col_g_sum # old sum - sum of old column + sum of new column
@@ -198,8 +198,8 @@ cC.calcGibbsProbZ = function(counts, m.CP.by.S, n.G.by.CP, n.by.C, n.CP, z, s, K
       new_g2_elememt = lgamma((n.CP[j] + n.by.C[i]) + (nG * beta)) # calculate new sum of ELEMENT j
       new_g2_sum = g2_sum - g2_elements_vector[j] + new_g2_elememt # old sum - old element + new element
 
-      #probs[j,i] = log(m.CP.by.S[j,s[i]] + alpha) + new_g_sum - new_g2_sum
-      log(m.CP.by.S[j,s[i]] + alpha) + new_g_sum - new_g2_sum #for dopar
+      probs[j,i] = log(m.CP.by.S[j,s[i]] + alpha) + new_g_sum - new_g2_sum
+      #log(m.CP.by.S[j,s[i]] + alpha) + new_g_sum - new_g2_sum #for dopar
     }
     
     ## Sample next state and add back counts
@@ -209,8 +209,8 @@ cC.calcGibbsProbZ = function(counts, m.CP.by.S, n.G.by.CP, n.by.C, n.CP, z, s, K
     n.G.by.CP[,z[i]] = n.G.by.CP[,z[i]] + counts[,i]
     n.CP[z[i]] = n.CP[z[i]] + n.by.C[i]
   }
-  end_time = Sys.time()
-  print(end_time - start_time)
+  # end_time = Sys.time()
+  # print(end_time - start_time)
   return(list(m.CP.by.S=m.CP.by.S, n.G.by.CP=n.G.by.CP, n.CP=n.CP, z=z, probs=probs))
 }
 
@@ -482,5 +482,3 @@ getL.celda_C = function(celda.mod) { return(NA) }
 celdaHeatmap.celda_C = function(celda.mod, counts, ...) {
   renderCeldaHeatmap(counts, z=celda.mod$z, ...)
 }
-
-
