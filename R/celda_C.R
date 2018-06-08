@@ -71,6 +71,21 @@ celda_C = function(counts, sample.label=NULL, K, alpha=1, beta=1,
   z = initialize.cluster(K, ncol(counts), initial = z.init, fixed = NULL, seed=seed)
   z.best = z
   
+  # Global variables for decomposeCounts
+  previousZ <<- integer(length(z)) # vector of 0s
+  previousS <<- 0
+  zChanged <<- TRUE
+  sChanged <<- TRUE 
+  global_nS <<- 0
+  global_nG <<- 0
+  global_nM <<- 0
+  global_m.CP.by.S <<- matrix(as.integer(table(factor(z, levels=1:K), s)), ncol=length(unique(s)))
+  global_n.G.by.CP <<- 0
+  global_n.CP <<- 0
+  global_n.by.C <<- 0
+  globalFlag <<- FALSE
+  simCellsFlag <<- FALSE
+  
   ## Calculate counts one time up front
   p = cC.decomposeCounts(counts, s, z, K)
   nS = p$nS
@@ -231,6 +246,7 @@ cC.calcGibbsProbZ = function(counts, m.CP.by.S, n.G.by.CP, n.by.C, n.CP, z, s, K
 simulateCells.celda_C = function(model, S=10, C.Range=c(10, 100), N.Range=c(100,5000), 
                                  G=500, K=5, alpha=1, beta=1, seed=12345, ...) {
   
+  simCellsFlag <<- TRUE
   set.seed(seed) 
   
   phi <- rdirichlet(K, rep(beta, G))
@@ -264,6 +280,7 @@ simulateCells.celda_C = function(model, S=10, C.Range=c(10, 100), N.Range=c(100,
   class(result) = "celda_C" 
   result = reorder.celda_C(counts = cell.counts, res = result)
   
+  simCellsFlag <<-FALSE
   return(list(z=result$z, counts=cell.counts, sample.label=cell.sample.label, K=K, alpha=alpha, beta=beta, C.Range=C.Range, N.Range=N.Range, S=S))
 }
 
@@ -370,14 +387,48 @@ calculateLoglikFromVariables.celda_C = function(counts, sample.label, z, K, alph
 #' @param z A numeric vector of cluster assignments
 #' @param K The total number of clusters in z
 cC.decomposeCounts = function(counts, s, z, K) {
-  nS = length(unique(s))
-  nG = nrow(counts)
-  nM = ncol(counts)
-  
-  m.CP.by.S = matrix(as.integer(table(factor(z, levels=1:K), s)), ncol=nS)
-  n.G.by.CP = t(rowsum.z(counts, z=z, K=K))
-  n.CP = as.integer(colSums(n.G.by.CP))
-  n.by.C = as.integer(colSums(counts))
+  if(simCellsFlag){
+    nS = length(unique(s))
+    nG = nrow(counts)
+    nM = ncol(counts)
+    
+    m.CP.by.S = matrix(as.integer(table(factor(z, levels=1:K), s)), ncol=nS)
+    n.G.by.CP = t(rowsum.z(counts, z=z, K=K))
+    n.CP = as.integer(colSums(n.G.by.CP))
+    n.by.C = as.integer(colSums(counts))
+  }else{
+    zChanged <<- if(identical(previousZ, z)) FALSE else TRUE
+    previousZ <<- z
+    sChanged <<- if(identical(previousS, s)) FALSE else TRUE
+    previousS <<- s
+    
+    if(!globalFlag){
+      global_n.by.C <<- as.integer(colSums(counts))
+      global_nG <<- nrow(counts)
+      global_nM <<- ncol(counts)
+      globalFlag = TRUE
+    }
+    n.by.C = global_n.by.C
+    nG = global_nG 
+    nM = global_nM 
+    
+    if(sChanged){
+      global_nS <<- length(unique(s))
+    }
+    nS = global_nS
+    
+    if(zChanged || sChanged){
+      global_m.CP.by.S <<- matrix(as.integer(table(factor(z, levels=1:K), s)), ncol=nS)
+    }
+    m.CP.by.S = global_m.CP.by.S
+    
+    if(zChanged){
+      global_n.G.by.CP = t(rowsum.z(counts, z=z, K=K))
+      global_n.CP = as.integer(colSums(global_n.G.by.CP))
+    }
+    n.G.by.CP = global_n.G.by.CP
+    n.CP = global_n.CP
+  }
   
   return(list(m.CP.by.S=m.CP.by.S, n.G.by.CP=n.G.by.CP, n.CP=n.CP, n.by.C=n.by.C, nS=nS, nG=nG, nM=nM))
 }
