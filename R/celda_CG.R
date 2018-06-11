@@ -496,7 +496,6 @@ setGlobalVariables.celda_CG = function(z,y,K,s){
   cCG.global_nG <<- 0
   cCG.global_nM <<- 0
   cCG.global_globalFlag <<- FALSE
-  cCG.global_simCellsFlag <<- FALSE
   cCG.global_variables_set <<- TRUE
 }
 
