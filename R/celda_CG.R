@@ -212,42 +212,6 @@ celda_CG = function(counts, sample.label=NULL, K, L,
   return(result)
 }
 
-setGlobalVariables.celda_CG = function(z,y,K,s){
-  # Counting the number of times decomposeCounts is called
-  # for info only, can be removed
-  cCG.global_count <<- 0
-  cCG.global_zChangedCount <<- 0 #number of times z did not change
-  cCG.global_yChangedCount <<- 0
-  cCG.global_sChangedCount <<- 0
-  cCG.global_zChangedVector <<- vector(length=50)
-  cCG.global_sChangedVector <<- vector(length=50)
-
-  # Global variables for decomposeCounts
-  cCG.global_previousZ <<- integer(length(z)) # vector of 0s
-  cCG.global_previousY <<- integer(length(y))
-  cCG.global_previousS <<- 0
-  cCG.global_zChanged <<- TRUE
-  cCG.global_yChanged <<- TRUE
-  cCG.global_sChanged <<- TRUE
-
-  cCG.global_nS <<- 0
-  cCG.global_m.CP.by.S <<- matrix(as.integer(table(factor(z, levels=1:K), s)), ncol=length(unique(s)))
-  cCG.global_n.TS.by.C <<- 0
-  cCG.global_n.CP.by.TS <<- 0
-  cCG.global_n.CP <<- 0
-  cCG.global_n.by.G <<- 0
-  cCG.global_n.by.C <<- 0
-  cCG.global_n.by.TS <<- 0
-  cCG.global_nG.by.TS <<- 0
-  cCG.global_n.CP.by.G <<- 0
-  cCG.global_nG <<- 0
-  cCG.global_nM <<- 0
-  cCG.global_globalFlag <<- FALSE
-  cCG.global_simCellsFlag <<- FALSE
-  cCG.global_variables_set <<- TRUE
-}
-
-
 #' Simulate cells from the cell/gene clustering generative model
 #' 
 #' @param model Celda model to use for simulation. One of 'available_models'. 
@@ -267,8 +231,6 @@ setGlobalVariables.celda_CG = function(z,y,K,s){
 simulateCells.celda_CG = function(model, S=10, C.Range=c(50,100), N.Range=c(500,5000), 
                                   G=1000, K=3, L=10, alpha=1, beta=1, gamma=1, 
                                   delta=1, seed=12345, ...) {
-  cCG.global_simCellsFlag <<-TRUE
-  
   set.seed(seed)
   
   ## Number of cells per sample
@@ -337,7 +299,6 @@ simulateCells.celda_CG = function(model, S=10, C.Range=c(50,100), N.Range=c(500,
                 count.checksum=NULL)
   class(result) = "celda_CG" 
   result = reorder.celda_CG(counts = cell.counts, res = result)
-  cCG.global_simCellsFlag <<-FALSE
   
   return(list(z=result$z, y=result$y, sample.label=cell.sample.label, counts=cell.counts, K=K, L=L, C.Range=C.Range, N.Range=N.Range, S=S, alpha=alpha, beta=beta, gamma=gamma, delta=delta, theta=theta, phi=phi, psi=psi, eta=eta, seed=seed))
 }
@@ -362,10 +323,6 @@ factorizeMatrix.celda_CG = function(celda.mod, counts, type=c("counts", "proport
   gamma = celda.mod$gamma
   sample.label = celda.mod$sample.label
   s = processSampleLabels(sample.label, ncol(counts))
-
-  if (!exists('cCG.global_variables_set')){
-    setGlobalVariables.celda_CG(z,y,K,s)
-  }
   
   ## Calculate counts one time up front
   p = cCG.decomposeCounts(counts, s, z, y, K, L)
@@ -508,6 +465,40 @@ calculateLoglikFromVariables.celda_CG = function(counts, sample.label, z, y, K, 
   return(final)
 }
 
+setGlobalVariables.celda_CG = function(z,y,K,s){
+  # Counting the number of times decomposeCounts is called
+  # for info only, can be removed
+  cCG.global_count <<- 0
+  cCG.global_zChangedCount <<- 0 #number of times z did not change
+  cCG.global_yChangedCount <<- 0
+  cCG.global_sChangedCount <<- 0
+  cCG.global_zChangedVector <<- vector(length=50)
+  cCG.global_sChangedVector <<- vector(length=50)
+  
+  # Global variables for decomposeCounts
+  cCG.global_previousZ <<- integer(length(z)) # vector of 0s
+  cCG.global_previousY <<- integer(length(y))
+  cCG.global_previousS <<- 0
+  cCG.global_zChanged <<- TRUE
+  cCG.global_yChanged <<- TRUE
+  cCG.global_sChanged <<- TRUE
+  
+  cCG.global_nS <<- 0
+  cCG.global_m.CP.by.S <<- matrix(as.integer(table(factor(z, levels=1:K), s)), ncol=length(unique(s)))
+  cCG.global_n.TS.by.C <<- 0
+  cCG.global_n.CP.by.TS <<- 0
+  cCG.global_n.CP <<- 0
+  cCG.global_n.by.G <<- 0
+  cCG.global_n.by.C <<- 0
+  cCG.global_n.by.TS <<- 0
+  cCG.global_nG.by.TS <<- 0
+  cCG.global_n.CP.by.G <<- 0
+  cCG.global_nG <<- 0
+  cCG.global_nM <<- 0
+  cCG.global_globalFlag <<- FALSE
+  cCG.global_simCellsFlag <<- FALSE
+  cCG.global_variables_set <<- TRUE
+}
 
 #' Takes raw counts matrix and converts it to a series of matrices needed for log likelihood calculation
 #' @param counts A numeric count matrix
@@ -518,93 +509,82 @@ calculateLoglikFromVariables.celda_CG = function(counts, sample.label, z, y, K, 
 #' @param L The number of gene clusters
 
 cCG.decomposeCounts = function(counts, s, z, y, K, L) {
-  if((cCG.global_simCellsFlag)){
-    nS = length(unique(s))
-    m.CP.by.S = matrix(as.integer(table(factor(z, levels=1:K), s)), ncol=nS)
-    n.TS.by.C = rowsum.y(counts, y=y, L=L)
-    n.CP.by.TS = rowsum.z(n.TS.by.C, z=z, K=K)
-    n.CP = as.integer(rowSums(n.CP.by.TS))
-    n.by.G = as.integer(rowSums(counts))
-    n.by.C = as.integer(colSums(counts))
-    n.by.TS = as.integer(rowsum.y(matrix(n.by.G,ncol=1), y=y, L=L))
-    nG.by.TS = as.integer(table(factor(y, 1:L)))
-    n.CP.by.G = rowsum.z(counts, z=z, K=K)
-    nG = nrow(counts)
-    nM = ncol(counts)
-  }else{
-    cCG.global_count <<- cCG.global_count + 1
-    
-    #cCG.global_yChanged <<- if(identical(cCG.global_previousY, y)) FALSE else TRUE
-    #cCG.global_sChanged <<- if(identical(cCG.global_previousS, s)) FALSE else TRUE
-    if(identical(cCG.global_previousZ, z)){
-      cCG.global_zChanged <<- FALSE
-    }else{
-      #print(ifelse(previousZ==z, 0, z)) #print values of z where elements differed
-      cCG.global_zChangedCount <<- cCG.global_zChangedCount + 1
-      cCG.global_zChangedVector[cCG.global_zChangedCount] <<- cCG.global_count
-      cCG.global_zChanged <<- TRUE
-    }
-    if(identical(cCG.global_previousY, y)){
-      cCG.global_yChanged <<- FALSE
-    }else{
-      #print(paste0("y changed in decomposeCount at iteration: ", count))
-      cCG.global_yChangedCount <<- cCG.global_yChangedCount + 1
-      cCG.global_yChanged <<- TRUE
-    }
-    if(identical(cCG.global_previousS, s)){
-      cCG.global_sChanged <<- FALSE
-    }else{
-      cCG.global_sChangedCount <<- cCG.global_sChangedCount + 1
-      cCG.global_sChangedVector[cCG.global_sChangedCount] <<- cCG.global_count
-      cCG.global_sChanged <<- TRUE
-    }
-    cCG.global_previousZ <<- z
-    cCG.global_previousY <<- y 
-    cCG.global_previousS <<- s
-    
-    if(!cCG.global_globalFlag){
-      cCG.global_n.by.G <<- as.integer(rowSums(counts))
-      cCG.global_n.by.C <<- as.integer(colSums(counts))
-      cCG.global_nG <<- nrow(counts)
-      cCG.global_nM <<- ncol(counts)
-      cCG.global_globalFlag = TRUE
-    }
-    n.by.G = cCG.global_n.by.G
-    n.by.C = cCG.global_n.by.C
-    nG = cCG.global_nG 
-    nM = cCG.global_nM 
-    
-    if(cCG.global_sChanged){
-      cCG.global_nS <<- length(unique(s))
-    }
-    nS = cCG.global_nS
-    
-    if(cCG.global_yChanged){
-      cCG.global_n.TS.by.C <<- rowsum.y(counts, y=y, L=L)
-      cCG.global_nG.by.TS <<- as.integer(table(factor(y, 1:L)))
-      cCG.global_n.by.TS <<- as.integer(rowsum.y(matrix(n.by.G,ncol=1), y=y, L=L))
-    }
-    n.TS.by.C = cCG.global_n.TS.by.C
-    nG.by.TS = cCG.global_nG.by.TS
-    n.by.TS = cCG.global_n.by.TS
-    
-    if(cCG.global_zChanged){
-      cCG.global_n.CP.by.G <<- rowsum.z(counts, z=z, K=K)
-    }
-    n.CP.by.G = cCG.global_n.CP.by.G
-    
-    if(cCG.global_zChanged || cCG.global_yChanged){
-      cCG.global_n.CP.by.TS <<- rowsum.z(n.TS.by.C, z=z, K=K)
-      cCG.global_n.CP <<- as.integer(rowSums(cCG.global_n.CP.by.TS))
-    }
-    n.CP.by.TS = cCG.global_n.CP.by.TS
-    n.CP = cCG.global_n.CP
-    
-    if(cCG.global_zChanged || cCG.global_sChanged){
-      cCG.global_m.CP.by.S <<- matrix(as.integer(table(factor(z, levels=1:K), s)), ncol=nS)
-    }
-    m.CP.by.S = cCG.global_m.CP.by.S
+  if (!exists('cCG.global_variables_set')){
+    setGlobalVariables.celda_CG(z,y,K,s)
   }
+  cCG.global_count <<- cCG.global_count + 1
+  
+  #cCG.global_yChanged <<- if(identical(cCG.global_previousY, y)) FALSE else TRUE
+  #cCG.global_sChanged <<- if(identical(cCG.global_previousS, s)) FALSE else TRUE
+  if(identical(cCG.global_previousZ, z)){
+    cCG.global_zChanged <<- FALSE
+  }else{
+    #print(ifelse(previousZ==z, 0, z)) #print values of z where elements differed
+    cCG.global_zChangedCount <<- cCG.global_zChangedCount + 1
+    cCG.global_zChangedVector[cCG.global_zChangedCount] <<- cCG.global_count
+    cCG.global_zChanged <<- TRUE
+  }
+  if(identical(cCG.global_previousY, y)){
+    cCG.global_yChanged <<- FALSE
+  }else{
+    #print(paste0("y changed in decomposeCount at iteration: ", count))
+    cCG.global_yChangedCount <<- cCG.global_yChangedCount + 1
+    cCG.global_yChanged <<- TRUE
+  }
+  if(identical(cCG.global_previousS, s)){
+    cCG.global_sChanged <<- FALSE
+  }else{
+    cCG.global_sChangedCount <<- cCG.global_sChangedCount + 1
+    cCG.global_sChangedVector[cCG.global_sChangedCount] <<- cCG.global_count
+    cCG.global_sChanged <<- TRUE
+  }
+  cCG.global_previousZ <<- z
+  cCG.global_previousY <<- y 
+  cCG.global_previousS <<- s
+  
+  if(!cCG.global_globalFlag){
+    cCG.global_n.by.G <<- as.integer(rowSums(counts))
+    cCG.global_n.by.C <<- as.integer(colSums(counts))
+    cCG.global_nG <<- nrow(counts)
+    cCG.global_nM <<- ncol(counts)
+    cCG.global_globalFlag = TRUE
+  }
+  n.by.G = cCG.global_n.by.G
+  n.by.C = cCG.global_n.by.C
+  nG = cCG.global_nG 
+  nM = cCG.global_nM 
+  
+  if(cCG.global_sChanged){
+    cCG.global_nS <<- length(unique(s))
+  }
+  nS = cCG.global_nS
+  
+  if(cCG.global_yChanged){
+    cCG.global_n.TS.by.C <<- rowsum.y(counts, y=y, L=L)
+    cCG.global_nG.by.TS <<- as.integer(table(factor(y, 1:L)))
+    cCG.global_n.by.TS <<- as.integer(rowsum.y(matrix(n.by.G,ncol=1), y=y, L=L))
+  }
+  n.TS.by.C = cCG.global_n.TS.by.C
+  nG.by.TS = cCG.global_nG.by.TS
+  n.by.TS = cCG.global_n.by.TS
+  
+  if(cCG.global_zChanged){
+    cCG.global_n.CP.by.G <<- rowsum.z(counts, z=z, K=K)
+  }
+  n.CP.by.G = cCG.global_n.CP.by.G
+  
+  if(cCG.global_zChanged || cCG.global_yChanged){
+    cCG.global_n.CP.by.TS <<- rowsum.z(n.TS.by.C, z=z, K=K)
+    cCG.global_n.CP <<- as.integer(rowSums(cCG.global_n.CP.by.TS))
+  }
+  n.CP.by.TS = cCG.global_n.CP.by.TS
+  n.CP = cCG.global_n.CP
+  
+  if(cCG.global_zChanged || cCG.global_sChanged){
+    cCG.global_m.CP.by.S <<- matrix(as.integer(table(factor(z, levels=1:K), s)), ncol=nS)
+  }
+  m.CP.by.S = cCG.global_m.CP.by.S
+
   return(list(m.CP.by.S=m.CP.by.S, n.TS.by.C=n.TS.by.C, n.CP.by.TS=n.CP.by.TS, n.CP=n.CP, n.by.G=n.by.G, n.by.C=n.by.C, n.by.TS=n.by.TS, nG.by.TS=nG.by.TS, n.CP.by.G=n.CP.by.G, nM=nM, nG=nG, nS=nS))
 }  
 

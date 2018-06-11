@@ -289,7 +289,6 @@ cG.calcGibbsProbY = function(counts.t, n.C.by.TS, n.by.TS, nG.by.TS, n.by.G, y, 
 simulateCells.celda_G = function(model, C=100, N.Range=c(500,5000),  G=1000, 
                                  L=5, beta=1, gamma=1, delta=1, seed=12345, ...) {
 
-  cG.global_simCellsFlag <<-TRUE
   set.seed(seed)
   eta = rdirichlet(1, rep(gamma, L))
   
@@ -339,7 +338,6 @@ simulateCells.celda_G = function(model, C=100, N.Range=c(500,5000),  G=1000,
   class(result) = "celda_G" 
   result = reorder.celda_G(counts = cell.counts, res = result)  
   
-  cG.global_simCellsFlag <<-FALSE
   return(list(y=result$y, counts=cell.counts, L=L, beta=beta, delta=delta, gamma=gamma, phi=phi, psi=psi, eta=eta, seed=seed))
 }
 
@@ -352,7 +350,6 @@ setGlobalVariables.celda_G = function(counts, y, L){
   cG.global_n.by.TS <<- 0
   cG.global_nG.by.TS <<- 0
   cG.global_globalFlag <<- FALSE
-  cG.global_simCellsFlag <<-- FALSE
   cG.global_variables_set <<- TRUE
 }
 
@@ -369,11 +366,6 @@ factorizeMatrix.celda_G = function(celda.mod, counts, type=c("counts", "proporti
   beta = celda.mod$beta
   delta = celda.mod$delta
   gamma = celda.mod$gamma
-
-  if (!exists('cG.global_variables_set')){
-    setGlobalVariables.celda_G(counts, y, L)
-  }
-
   
   p = cG.decomposeCounts(counts=counts, y=y, L=L)
   n.TS.by.C = t(p$n.C.by.TS)
@@ -495,35 +487,29 @@ calculateLoglikFromVariables.celda_G = function(counts, y, L, beta, delta, gamma
 #' @param y A numeric vector of gene cluster assignments
 #' @param L The number of clusters being considered
 cG.decomposeCounts = function(counts, y, L) {
-  if(cG.global_simCellsFlag){
-    n.C.by.TS = t(rowsum.y(counts, y=y, L=L))
-    n.by.G = as.integer(rowSums(counts))
-    n.by.TS = as.integer(rowsum.y(matrix(n.by.G,ncol=1), y=y, L=L))
-    nG.by.TS = as.integer(table(factor(y, 1:L)))
-    nM = ncol(counts)
-    nG = nrow(counts)
-  }else{
-    cG.global_yChanged <<- if(identical(cG.global_previousY, y)) FALSE else TRUE
-    cG.global_previousY <<- y 
-    if(!cG.global_globalFlag){
-      cG.global_nG <<- nrow(counts)
-      cG.global_nM <<- ncol(counts)
-      cG.global_n.by.G <<- as.integer(rowSums(counts))
-      cG.global_globalFlag = TRUE
-    }
-    n.by.G = cG.global_n.by.G
-    nM = cG.global_nM
-    nG = cG.global_nG
-    
-    if(cG.global_yChanged){
-      cG.global_n.C.by.TS = t(rowsum.y(counts, y=y, L=L))
-      cG.global_n.by.TS = as.integer(rowsum.y(matrix(n.by.G,ncol=1), y=y, L=L))
-      cG.global_nG.by.TS = as.integer(table(factor(y, 1:L)))
-    }
-    n.C.by.TS = cG.global_n.C.by.TS
-    n.by.TS = cG.global_n.by.TS
-    nG.by.TS = cG.global_nG.by.TS
+  if (!exists('cG.global_variables_set')){
+    setGlobalVariables.celda_G(counts, y, L)
   }
+  cG.global_yChanged <<- if(identical(cG.global_previousY, y)) FALSE else TRUE
+  cG.global_previousY <<- y 
+  if(!cG.global_globalFlag){
+    cG.global_nG <<- nrow(counts)
+    cG.global_nM <<- ncol(counts)
+    cG.global_n.by.G <<- as.integer(rowSums(counts))
+    cG.global_globalFlag = TRUE
+  }
+  n.by.G = cG.global_n.by.G
+  nM = cG.global_nM
+  nG = cG.global_nG
+  
+  if(cG.global_yChanged){
+    cG.global_n.C.by.TS = t(rowsum.y(counts, y=y, L=L))
+    cG.global_n.by.TS = as.integer(rowsum.y(matrix(n.by.G,ncol=1), y=y, L=L))
+    cG.global_nG.by.TS = as.integer(table(factor(y, 1:L)))
+  }
+  n.C.by.TS = cG.global_n.C.by.TS
+  n.by.TS = cG.global_n.by.TS
+  nG.by.TS = cG.global_nG.by.TS
   
   return(list(n.C.by.TS=n.C.by.TS, n.by.G=n.by.G, n.by.TS=n.by.TS, nG.by.TS=nG.by.TS, nM=nM, nG=nG))
 }

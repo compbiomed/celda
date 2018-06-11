@@ -273,23 +273,6 @@ simulateCells.celda_C = function(model, S=10, C.Range=c(10, 100), N.Range=c(100,
   return(list(z=result$z, counts=cell.counts, sample.label=cell.sample.label, K=K, alpha=alpha, beta=beta, C.Range=C.Range, N.Range=N.Range, S=S))
 }
 
-setGlobalVariables.celda_C = function(counts, K, s, z){
-  cC.global_previousZ <<- integer(length(z)) # vector of 0s
-  cC.global_previousS <<- 0
-  cC.global_zChanged <<- TRUE
-  cC.global_sChanged <<- TRUE
-  cC.global_nS <<- 0
-  cC.global_nG <<- 0
-  cC.global_nM <<- 0
-  cC.global_m.CP.by.S <<- matrix(as.integer(table(factor(z, levels=1:K), s)), ncol=length(unique(s)))
-  cC.global_n.G.by.CP <<- t(rowsum.z(counts, z=z, K=K))
-  cC.global_n.CP <<- 0
-  cC.global_n.by.C <<- 0
-  cC.globalFlag <<- FALSE
-  cC.global_simCellsFlag <<- FALSE
-  cC.global_variables_set <<- TRUE
-}
-
 #' Generate factorized matrices showing each feature's influence on the celda_C model clustering 
 #' 
 #' @param counts A numeric count matrix
@@ -304,11 +287,6 @@ factorizeMatrix.celda_C = function(celda.mod, counts, type=c("counts", "proporti
   beta = celda.mod$beta
   sample.label = celda.mod$sample.label
   s = processSampleLabels(sample.label, ncol(counts))
-
-  if (!exists('cC.global_variables_set')){
-    setGlobalVariables.celda_C(counts, K, s, z)
-  }
-
 
   p = cC.decomposeCounts(counts, s, z, K)
   m.CP.by.S = p$m.CP.by.S
@@ -390,6 +368,21 @@ calculateLoglikFromVariables.celda_C = function(counts, sample.label, z, K, alph
   return(final)
 }
 
+setGlobalVariables.celda_C = function(counts, K, s, z){
+  cC.global_previousZ <<- integer(length(z)) # vector of 0s
+  cC.global_previousS <<- 0
+  cC.global_zChanged <<- TRUE
+  cC.global_sChanged <<- TRUE
+  cC.global_nS <<- 0
+  cC.global_nG <<- 0
+  cC.global_nM <<- 0
+  cC.global_m.CP.by.S <<- matrix(as.integer(table(factor(z, levels=1:K), s)), ncol=length(unique(s)))
+  cC.global_n.G.by.CP <<- t(rowsum.z(counts, z=z, K=K))
+  cC.global_n.CP <<- 0
+  cC.global_n.by.C <<- 0
+  cC.globalFlag <<- FALSE
+  cC.global_variables_set <<- TRUE
+}
 
 #' Takes raw counts matrix and converts it to a series of matrices needed for log likelihood calculation
 #' @param counts A numeric count matrix
@@ -397,48 +390,41 @@ calculateLoglikFromVariables.celda_C = function(counts, sample.label, z, K, alph
 #' @param z A numeric vector of cluster assignments
 #' @param K The total number of clusters in z
 cC.decomposeCounts = function(counts, s, z, K) {
-  if(cC.global_simCellsFlag){
-    nS = length(unique(s))
-    nG = nrow(counts)
-    nM = ncol(counts)
-    
-    m.CP.by.S = matrix(as.integer(table(factor(z, levels=1:K), s)), ncol=nS)
-    n.G.by.CP = t(rowsum.z(counts, z=z, K=K))
-    n.CP = as.integer(colSums(n.G.by.CP))
-    n.by.C = as.integer(colSums(counts))
-  }else{
-    cC.global_zChanged <<- if(identical(cC.global_previousZ, z)) FALSE else TRUE
-    cC.global_previousZ <<- z
-    cC.global_sChanged <<- if(identical(cC.global_previousS, s)) FALSE else TRUE
-    cC.global_previousS <<- s
-    
-    if(!cC.globalFlag){
-      cC.global_n.by.C <<- as.integer(colSums(counts))
-      cC.global_nG <<- nrow(counts)
-      cC.global_nM <<- ncol(counts)
-      cC.globalFlag = TRUE
-    }
-    n.by.C = cC.global_n.by.C
-    nG = cC.global_nG 
-    nM = cC.global_nM 
-    
-    if(cC.global_sChanged){
-      cC.global_nS <<- length(unique(s))
-    }
-    nS = cC.global_nS
-    
-    if(cC.global_zChanged || cC.global_sChanged){
-      cC.global_m.CP.by.S <<- matrix(as.integer(table(factor(z, levels=1:K), s)), ncol=nS)
-    }
-    m.CP.by.S = cC.global_m.CP.by.S
-    
-    if(cC.global_zChanged){
-      cC.global_n.G.by.CP = t(rowsum.z(counts, z=z, K=K))
-      cC.global_n.CP = as.integer(colSums(cC.global_n.G.by.CP))
-    }
-    n.G.by.CP = cC.global_n.G.by.CP
-    n.CP = cC.global_n.CP
+  if (!exists('cC.global_variables_set')){
+    setGlobalVariables.celda_C(counts, K, s, z)
   }
+  
+  cC.global_zChanged <<- if(identical(cC.global_previousZ, z)) FALSE else TRUE
+  cC.global_previousZ <<- z
+  cC.global_sChanged <<- if(identical(cC.global_previousS, s)) FALSE else TRUE
+  cC.global_previousS <<- s
+  
+  if(!cC.globalFlag){
+    cC.global_n.by.C <<- as.integer(colSums(counts))
+    cC.global_nG <<- nrow(counts)
+    cC.global_nM <<- ncol(counts)
+    cC.globalFlag = TRUE
+  }
+  n.by.C = cC.global_n.by.C
+  nG = cC.global_nG 
+  nM = cC.global_nM 
+  
+  if(cC.global_sChanged){
+    cC.global_nS <<- length(unique(s))
+  }
+  nS = cC.global_nS
+  
+  if(cC.global_zChanged || cC.global_sChanged){
+    cC.global_m.CP.by.S <<- matrix(as.integer(table(factor(z, levels=1:K), s)), ncol=nS)
+  }
+  m.CP.by.S = cC.global_m.CP.by.S
+  
+  if(cC.global_zChanged){
+    cC.global_n.G.by.CP = t(rowsum.z(counts, z=z, K=K))
+    cC.global_n.CP = as.integer(colSums(cC.global_n.G.by.CP))
+  }
+  n.G.by.CP = cC.global_n.G.by.CP
+  n.CP = cC.global_n.CP
   
   return(list(m.CP.by.S=m.CP.by.S, n.G.by.CP=n.G.by.CP, n.CP=n.CP, n.by.C=n.by.C, nS=nS, nG=nG, nM=nM))
 }
