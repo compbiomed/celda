@@ -73,14 +73,7 @@ celda_G = function(counts, L, beta=1, delta=1, gamma=1,
   y.best = y  
   
   # Global variables for decomposeCounts
-  cG.global_previousY <<- integer(length(y))
-  cG.global_yChanged <<- TRUE
-  cG.global_n.C.by.TS <<- t(rowsum.y(counts, y=y, L=L))
-  cG.global_n.by.G <<- 0
-  cG.global_n.by.TS <<- 0
-  cG.global_nG.by.TS <<- 0
-  cG.global_globalFlag <<- FALSE
-  cG.global_simCellsFlag <<-- FALSE
+  setGlobalVariables.celda_G(counts, y, L)
   
   ## Calculate counts one time up front
   p = cG.decomposeCounts(counts=counts, y=y, L=L)
@@ -295,7 +288,7 @@ cG.calcGibbsProbY = function(counts.t, n.C.by.TS, n.by.TS, nG.by.TS, n.by.G, y, 
 #' @export
 simulateCells.celda_G = function(model, C=100, N.Range=c(500,5000),  G=1000, 
                                  L=5, beta=1, gamma=1, delta=1, seed=12345, ...) {
-  
+
   cG.global_simCellsFlag <<-TRUE
   set.seed(seed)
   eta = rdirichlet(1, rep(gamma, L))
@@ -351,6 +344,18 @@ simulateCells.celda_G = function(model, C=100, N.Range=c(500,5000),  G=1000,
 }
 
 
+setGlobalVariables.celda_G = function(counts, y, L){
+  cG.global_previousY <<- integer(length(y))
+  cG.global_yChanged <<- TRUE
+  cG.global_n.C.by.TS <<- t(rowsum.y(counts, y=y, L=L))
+  cG.global_n.by.G <<- 0
+  cG.global_n.by.TS <<- 0
+  cG.global_nG.by.TS <<- 0
+  cG.global_globalFlag <<- FALSE
+  cG.global_simCellsFlag <<-- FALSE
+  cG.global_variables_set <<- TRUE
+}
+
 #' Generate factorized matrices showing each feature's influence on the celda_G model clustering 
 #' 
 #' @param counts A numeric count matrix
@@ -364,6 +369,11 @@ factorizeMatrix.celda_G = function(celda.mod, counts, type=c("counts", "proporti
   beta = celda.mod$beta
   delta = celda.mod$delta
   gamma = celda.mod$gamma
+
+  if (!exists('cG.global_variables_set')){
+    setGlobalVariables.celda_G(counts, y, L)
+  }
+
   
   p = cG.decomposeCounts(counts=counts, y=y, L=L)
   n.TS.by.C = t(p$n.C.by.TS)

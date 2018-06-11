@@ -80,37 +80,7 @@ celda_CG = function(counts, sample.label=NULL, K, L,
   z.best = z
   y.best = y 
   
-  # Counting the number of times decomposeCounts is called
-  # for info only, can be removed
-  cCG.global_count <<- 0
-  cCG.global_zChangedCount <<- 0 #number of times z did not change
-  cCG.global_yChangedCount <<- 0
-  cCG.global_sChangedCount <<- 0
-  cCG.global_zChangedVector <<- vector(length=50)
-  cCG.global_sChangedVector <<- vector(length=50)
-  
-  # Global variables for decomposeCounts
-  cCG.global_previousZ <<- integer(length(z)) # vector of 0s
-  cCG.global_previousY <<- integer(length(y))
-  cCG.global_previousS <<- 0
-  cCG.global_zChanged <<- TRUE
-  cCG.global_yChanged <<- TRUE
-  cCG.global_sChanged <<- TRUE
-  
-  cCG.global_nS <<- 0
-  cCG.global_m.CP.by.S <<- matrix(as.integer(table(factor(z, levels=1:K), s)), ncol=length(unique(s)))
-  cCG.global_n.TS.by.C <<- 0
-  cCG.global_n.CP.by.TS <<- 0
-  cCG.global_n.CP <<- 0
-  cCG.global_n.by.G <<- 0
-  cCG.global_n.by.C <<- 0
-  cCG.global_n.by.TS <<- 0
-  cCG.global_nG.by.TS <<- 0
-  cCG.global_n.CP.by.G <<- 0
-  cCG.global_nG <<- 0
-  cCG.global_nM <<- 0
-  cCG.global_globalFlag <<- FALSE
-  cCG.global_simCellsFlag <<- FALSE
+  setGlobalVariables.celda_CG(z,y,K,s)
   
   ## Calculate counts one time up front
   p = cCG.decomposeCounts(counts, s, z, y, K, L)
@@ -231,17 +201,51 @@ celda_CG = function(counts, sample.label=NULL, K, L,
   
   ## Peform reordering on final Z and Y assigments:
   result = reorder.celda_CG(counts = counts, res = result)
-  print("**********************************DECOMPOSECOUNT SUMMARY**********************************");
-  print(paste0("number of times decomposeCount was called : ", cCG.global_count))
-  print(paste0("number of times z changed in decomposeCount: ", cCG.global_zChangedCount))
-  print(paste0("number of times y changed in decomposeCount: ", cCG.global_yChangedCount))
-  print(paste0("number of times s changed in decomposeCount: ", cCG.global_sChangedCount))
-  print(paste(c("z changed in decomposeCount at iterations: ", cCG.global_zChangedVector[cCG.global_zChangedVector != 0])))
-  print(paste(c("s changed in decomposeCount at iterations: ", cCG.global_sChangedVector[cCG.global_sChangedVector != 0])))
+  # print("**********************************DECOMPOSECOUNT SUMMARY**********************************");
+  # print(paste0("number of times decomposeCount was called : ", cCG.global_count))
+  # print(paste0("number of times z changed in decomposeCount: ", cCG.global_zChangedCount))
+  # print(paste0("number of times y changed in decomposeCount: ", cCG.global_yChangedCount))
+  # print(paste0("number of times s changed in decomposeCount: ", cCG.global_sChangedCount))
+  # print(paste(c("z changed in decomposeCount at iterations: ", cCG.global_zChangedVector[cCG.global_zChangedVector != 0])))
+  # print(paste(c("s changed in decomposeCount at iterations: ", cCG.global_sChangedVector[cCG.global_sChangedVector != 0])))
+
   return(result)
 }
 
+setGlobalVariables.celda_CG = function(z,y,K,s){
+  # Counting the number of times decomposeCounts is called
+  # for info only, can be removed
+  cCG.global_count <<- 0
+  cCG.global_zChangedCount <<- 0 #number of times z did not change
+  cCG.global_yChangedCount <<- 0
+  cCG.global_sChangedCount <<- 0
+  cCG.global_zChangedVector <<- vector(length=50)
+  cCG.global_sChangedVector <<- vector(length=50)
 
+  # Global variables for decomposeCounts
+  cCG.global_previousZ <<- integer(length(z)) # vector of 0s
+  cCG.global_previousY <<- integer(length(y))
+  cCG.global_previousS <<- 0
+  cCG.global_zChanged <<- TRUE
+  cCG.global_yChanged <<- TRUE
+  cCG.global_sChanged <<- TRUE
+
+  cCG.global_nS <<- 0
+  cCG.global_m.CP.by.S <<- matrix(as.integer(table(factor(z, levels=1:K), s)), ncol=length(unique(s)))
+  cCG.global_n.TS.by.C <<- 0
+  cCG.global_n.CP.by.TS <<- 0
+  cCG.global_n.CP <<- 0
+  cCG.global_n.by.G <<- 0
+  cCG.global_n.by.C <<- 0
+  cCG.global_n.by.TS <<- 0
+  cCG.global_nG.by.TS <<- 0
+  cCG.global_n.CP.by.G <<- 0
+  cCG.global_nG <<- 0
+  cCG.global_nM <<- 0
+  cCG.global_globalFlag <<- FALSE
+  cCG.global_simCellsFlag <<- FALSE
+  cCG.global_variables_set <<- TRUE
+}
 
 
 #' Simulate cells from the cell/gene clustering generative model
@@ -358,6 +362,10 @@ factorizeMatrix.celda_CG = function(celda.mod, counts, type=c("counts", "proport
   gamma = celda.mod$gamma
   sample.label = celda.mod$sample.label
   s = processSampleLabels(sample.label, ncol(counts))
+
+  if (!exists('cCG.global_variables_set')){
+    setGlobalVariables.celda_CG(z,y,K,s)
+  }
   
   ## Calculate counts one time up front
   p = cCG.decomposeCounts(counts, s, z, y, K, L)

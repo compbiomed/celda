@@ -72,19 +72,8 @@ celda_C = function(counts, sample.label=NULL, K, alpha=1, beta=1,
   z.best = z
   
   # Global variables for decomposeCounts
-  cC.global_previousZ <<- integer(length(z)) # vector of 0s
-  cC.global_previousS <<- 0
-  cC.global_zChanged <<- TRUE
-  cC.global_sChanged <<- TRUE 
-  cC.global_nS <<- 0
-  cC.global_nG <<- 0
-  cC.global_nM <<- 0
-  cC.global_m.CP.by.S <<- matrix(as.integer(table(factor(z, levels=1:K), s)), ncol=length(unique(s)))
-  cC.global_n.G.by.CP <<- t(rowsum.z(counts, z=z, K=K))
-  cC.global_n.CP <<- 0
-  cC.global_n.by.C <<- 0
-  cC.globalFlag <<- FALSE
-  cC.global_simCellsFlag <<- FALSE
+  setGlobalVariables.celda_C(counts, K, s, z)
+
   
   ## Calculate counts one time up front
   p = cC.decomposeCounts(counts, s, z, K)
@@ -284,6 +273,22 @@ simulateCells.celda_C = function(model, S=10, C.Range=c(10, 100), N.Range=c(100,
   return(list(z=result$z, counts=cell.counts, sample.label=cell.sample.label, K=K, alpha=alpha, beta=beta, C.Range=C.Range, N.Range=N.Range, S=S))
 }
 
+setGlobalVariables.celda_C = function(counts, K, s, z){
+  cC.global_previousZ <<- integer(length(z)) # vector of 0s
+  cC.global_previousS <<- 0
+  cC.global_zChanged <<- TRUE
+  cC.global_sChanged <<- TRUE
+  cC.global_nS <<- 0
+  cC.global_nG <<- 0
+  cC.global_nM <<- 0
+  cC.global_m.CP.by.S <<- matrix(as.integer(table(factor(z, levels=1:K), s)), ncol=length(unique(s)))
+  cC.global_n.G.by.CP <<- t(rowsum.z(counts, z=z, K=K))
+  cC.global_n.CP <<- 0
+  cC.global_n.by.C <<- 0
+  cC.globalFlag <<- FALSE
+  cC.global_simCellsFlag <<- FALSE
+  cC.global_variables_set <<- TRUE
+}
 
 #' Generate factorized matrices showing each feature's influence on the celda_C model clustering 
 #' 
@@ -292,14 +297,19 @@ simulateCells.celda_C = function(model, S=10, C.Range=c(10, 100), N.Range=c(100,
 #' @param type A character vector containing one or more of "counts", "proportions", or "posterior". "counts" returns the raw number of counts for each entry in each matrix. "proportions" returns the counts matrix where each vector is normalized to a probability distribution. "posterior" returns the posterior estimates which include the addition of the Dirichlet concentration parameter (essentially as a pseudocount).
 #' @export
 factorizeMatrix.celda_C = function(celda.mod, counts, type=c("counts", "proportion", "posterior")) {
-  
+
   K = celda.mod$K
   z = celda.mod$z
   alpha = celda.mod$alpha
   beta = celda.mod$beta
   sample.label = celda.mod$sample.label
   s = processSampleLabels(sample.label, ncol(counts))
-  
+
+  if (!exists('cC.global_variables_set')){
+    setGlobalVariables.celda_C(counts, K, s, z)
+  }
+
+
   p = cC.decomposeCounts(counts, s, z, K)
   m.CP.by.S = p$m.CP.by.S
   n.G.by.CP = p$n.G.by.CP
