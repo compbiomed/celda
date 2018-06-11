@@ -96,7 +96,7 @@ test_that(desc = "Making sure celda_G runs without errors",{
   #celdaG.res <- celda_G(counts = celdaG.sim$counts, model = "celda_G", nchains = 2, L = 5, max.iter = 15)
   #expect_true(class(celdaG.res) == "celda_list")  # Only best chain returned by default
 
-  celdaG.res <- celda_G(counts = celdaG.sim$counts, L = 5, max.iter = 15)
+  celdaG.res <- celda_G(counts = celdaG.sim$counts, L = 5, max.iter = 15, random.state.order = FALSE)
   expect_true(class(celdaG.res) == "celda_G")
 
 })
