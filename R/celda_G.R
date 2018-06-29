@@ -341,18 +341,6 @@ simulateCells.celda_G = function(model, C=100, N.Range=c(500,5000),  G=1000,
   return(list(y=result$y, counts=cell.counts, L=L, beta=beta, delta=delta, gamma=gamma, phi=phi, psi=psi, eta=eta, seed=seed))
 }
 
-
-setGlobalVariables.celda_G = function(counts, y, L){
-  cG.global_previousY <<- integer(length(y))
-  cG.global_yChanged <<- TRUE
-  cG.global_n.C.by.TS <<- t(rowsum.y(counts, y=y, L=L))
-  cG.global_n.by.G <<- 0
-  cG.global_n.by.TS <<- 0
-  cG.global_nG.by.TS <<- 0
-  cG.global_globalFlag <<- FALSE
-  cG.global_variables_set <<- TRUE
-}
-
 #' Generate factorized matrices showing each feature's influence on the celda_G model clustering 
 #' 
 #' @param counts A numeric count matrix
@@ -481,6 +469,16 @@ calculateLoglikFromVariables.celda_G = function(counts, y, L, beta, delta, gamma
   return(final)
 }
 
+setGlobalVariables.celda_G = function(counts, y, L){
+  cG.global_previousY <<- integer(length(y))
+  cG.global_yChanged <<- TRUE
+  cG.global_n.C.by.TS <<- t(rowsum.y(counts, y=y, L=L))
+  cG.global_n.by.G <<- 0
+  cG.global_n.by.TS <<- 0
+  cG.global_nG.by.TS <<- 0
+  cG.global_globalFlag <<- FALSE
+  cG.global_variables_set <<- TRUE
+}
 
 #' Takes raw counts matrix and converts it to a series of matrices needed for log likelihood calculation
 #' @param counts A numeric count matrix
