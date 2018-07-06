@@ -120,7 +120,7 @@ celda_CG = function(counts, sample.label=NULL, K, L,
     z = next.z$z
         
     ## Gibbs sampling for each gene
-   	next.y = cG.calcGibbsProbY(counts=n.G.by.CP, n.TS.by.C=n.TS.by.CP, n.by.TS=n.by.TS, nG.by.TS=nG.by.TS, n.by.G=n.by.G, y=y, L=L, nG=nG, beta=beta, delta=delta, gamma=gamma, random.state.order=random.state.order)
+   	next.y = cG.calcGibbsProbY(counts=n.G.by.CP, n.C.by.TS=t(n.TS.by.CP), n.by.TS=n.by.TS, nG.by.TS=nG.by.TS, n.by.G=n.by.G, y=y, L=L, nG=nG, beta=beta, delta=delta, gamma=gamma, random.state.order=random.state.order)
   	n.TS.by.CP = next.y$n.TS.by.C
   	nG.by.TS = next.y$nG.by.TS
   	n.by.TS = next.y$n.by.TS
@@ -562,7 +562,7 @@ cCG.decomposeCounts = function(counts, s, z, y, K, L) {
   n.G.by.CP = cCG.global_n.G.by.CP
   
   if(cCG.global_zChanged || cCG.global_yChanged){
-    cCG.global_n.TS.by.CP <<- colSumByGroup(n.TS.by.C, z=z, K=K)
+    cCG.global_n.TS.by.CP <<- colSumByGroup(n.TS.by.C, group=z, K=K)
     cCG.global_n.CP <<- as.integer(colSums(cCG.global_n.TS.by.CP))
   }
   n.TS.by.CP = cCG.global_n.TS.by.CP
@@ -602,11 +602,11 @@ clusterProbability.celda_CG = function(celda.mod, counts, log=FALSE, ...) {
   p = cCG.decomposeCounts(counts, s, z, y, K, L)
   
   ## Gibbs sampling for each cell
-  next.z = cC.calcGibbsProbZ(counts=p$n.TS.by.C, m.CP.by.S=p$m.CP.by.S, n.G.by.CP=p$n.TS.by.CP, n.CP=p$n.CP, n.by.C=p$n.by.C, z=z, s=s, K=K, nG=L, nM=p$nM, alpha=alpha, beta=beta, do.sample=FALSE)
+  next.z = cC.calcGibbsProbZ(counts=p$n.TS.by.C, m.CP.by.S=p$m.CP.by.S, n.G.by.CP=p$n.G.by.CP, n.CP=p$n.CP, n.by.C=p$n.by.C, z=z, s=s, K=K, nG=L, nM=p$nM, alpha=alpha, beta=beta, do.sample=FALSE)
   z.prob = t(next.z$probs)
   
   ## Gibbs sampling for each gene
-  next.y = cG.calcGibbsProbY(counts=p$n.CP.by.G, n.TS.by.C=p$n.TS.by.CP, n.by.TS=p$n.by.TS, nG.by.TS=p$nG.by.TS, n.by.G=p$n.by.G, y=y, L=L, nG=nG, beta=beta, delta=delta, gamma=gamma, do.sample=FALSE)
+  next.y = cG.calcGibbsProbY(counts=p$n.CP.by.G, n.C.by.TS=t(p$n.TS.by.CP), n.by.TS=p$n.by.TS, nG.by.TS=p$nG.by.TS, n.by.G=p$n.by.G, y=y, L=L, nG=nG, beta=beta, delta=delta, gamma=gamma, do.sample=FALSE)
   y.prob = t(next.y$probs)
   
   if(!isTRUE(log)) {
