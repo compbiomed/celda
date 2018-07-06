@@ -1,5 +1,6 @@
 #celda_C
 library(celda)
+library(testthat)
 context("Testing celda_C")
 
 load("../celdaCsim.rda")
@@ -8,7 +9,6 @@ counts.matrix <- celdaC.sim$counts
 model_C = getModel(celdaC.res, K = 5)[[1]]
 factorized = factorizeMatrix(counts=counts.matrix, celda.mod=model_C)
 
-distinct_colors
 test_that(desc = "Checking distinct_colors",{
   expect_equal(distinct_colors(2), c("#FF4D4D", "#4DFFFF"))
 })
@@ -19,10 +19,9 @@ test_that(desc = "Checking renderCeldaHeatmap to see if it runs without errors",
                c("tree_row","tree_col","kmeans","gtable"))
 })
 
-##feature_selection.R##
 #topRank
 test_that(desc = "Checking topRank to see if it runs without errors",{
-  top.rank <- topRank(fm = factorized$proportions$gene.states, n = 1000)
+  top.rank <- topRank(fm = factorized_C$proportions$gene.states, n = 1000)
   expect_equal(names(top.rank),
                c("index","names"))
 })
@@ -34,8 +33,12 @@ test_that(desc = "Checking diffExpBetweenCellStates",{
   expect_equal(class(diffexp_K1), c("data.table","data.frame"))
 })
 
+
 ##celda_C.R##
 test_that(desc = "Checking celda_C to see if it runs without errors",{
   celdaC.res <- celda(counts = celdaC.sim$counts, model = "celda_C",  nchains = 2, K = c(5,10), max.iter = 15)
   expect_true(class(celdaC.res) == "celda_list")  # Only best chain is returned
 })
+
+print("Done testing Celda C.")
+

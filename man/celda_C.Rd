@@ -6,8 +6,8 @@
 \usage{
 celda_C(counts, sample.label = NULL, K, alpha = 1, beta = 1,
   algorithm = c("EM", "Gibbs"), stop.iter = 10, max.iter = 200,
-  split.on.iter = 10, split.on.last = TRUE, count.checksum = NULL,
-  seed = 12345, z.init = NULL, logfile = NULL)
+  split.on.iter = 10, split.on.last = TRUE, random.state.orderr = TRUE,
+  count.checksum = NULL, seed = 12345, z.init = NULL, logfile = NULL)
 }
 \arguments{
 \item{counts}{A numeric count matrix}
@@ -37,6 +37,8 @@ celda_C(counts, sample.label = NULL, K, alpha = 1, beta = 1,
 \item{z.init}{Initial values of z. If NULL, z will be randomly sampled. Default NULL.}
 
 \item{logfile}{If NULL, messages will be displayed as normal. If set to a file name, messages will be redirected messages to the file. Default NULL.}
+
+\item{random.state.order}{Whether to sample cells in a random order when performing Gibbs sampling. Defaults to TRUE.}
 }
 \value{
 An object of class celda_C with clustering results and Gibbs sampling statistics
