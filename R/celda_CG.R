@@ -120,7 +120,7 @@ celda_CG = function(counts, sample.label=NULL, K, L,
     z = next.z$z
         
     ## Gibbs sampling for each gene
-   	next.y = cG.calcGibbsProbY(counts=n.G.by.CP, n.C.by.TS=t(n.TS.by.CP), n.by.TS=n.by.TS, nG.by.TS=nG.by.TS, n.by.G=n.by.G, y=y, L=L, nG=nG, beta=beta, delta=delta, gamma=gamma, random.state.order=random.state.order)
+   	next.y = cG.calcGibbsProbY(counts=t(n.G.by.CP), n.C.by.TS=t(n.TS.by.CP), n.by.TS=n.by.TS, nG.by.TS=nG.by.TS, n.by.G=n.by.G, y=y, L=L, nG=nG, beta=beta, delta=delta, gamma=gamma, random.state.order=random.state.order)
   	n.TS.by.CP = next.y$n.TS.by.C
   	nG.by.TS = next.y$nG.by.TS
   	n.by.TS = next.y$n.by.TS

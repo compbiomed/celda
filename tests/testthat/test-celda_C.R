@@ -21,7 +21,7 @@ test_that(desc = "Checking renderCeldaHeatmap to see if it runs without errors",
 
 #topRank
 test_that(desc = "Checking topRank to see if it runs without errors",{
-  top.rank <- topRank(fm = factorized_C$proportions$gene.states, n = 1000)
+  top.rank <- topRank(fm = factorized$proportions$gene.states, n = 1000)
   expect_equal(names(top.rank),
                c("index","names"))
 })

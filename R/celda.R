@@ -67,7 +67,8 @@ celda = function(counts, model, sample.label=NULL, K=NULL, L=NULL, alpha=1, beta
   count.checksum = digest::digest(counts, algo="md5")
   params.list$count.checksum = count.checksum
    
-   res.list = foreach(i = 1:nrow(run.params), .export=model, .combine = c, .multicombine=TRUE) %dopar% {
+   #res.list = foreach(i = 1:nrow(run.params), .export=model, .combine = c, .multicombine=TRUE) %dopar% {
+   res.list = sapply(1:nrow(run.params), function(i){
     chain.params = append(params.list,
                           as.list(dplyr::select(run.params[i,],
                                                 dplyr::matches("K|L"))))
@@ -83,7 +84,7 @@ celda = function(counts, model, sample.label=NULL, K=NULL, L=NULL, alpha=1, beta
       res = suppressMessages(do.call(model, chain.params))
     }
     return(list(res))
-  }
+  })
   parallel::stopCluster(cl)
   celda.res = list(run.params=run.params, res.list=res.list, 
                    content.type=model, count.checksum=count.checksum)
