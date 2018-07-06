@@ -115,7 +115,7 @@ celda_G = function(counts, L, beta=1, delta=1, gamma=1,
       ## Re-calculate variables
       y = res$y
       n.C.by.TS = res$n.C.by.TS
-      n.by.TS = as.integer(rowsum.y(matrix(n.by.G,ncol=1), y=y, L=L))
+      n.by.TS = as.integer(rowSumByGroup(matrix(n.by.G,ncol=1), group=y, L=L))
       nG.by.TS = as.integer(table(factor(y, 1:L)))
     }
     
@@ -443,7 +443,7 @@ calculateLoglikFromVariables.celda_G = function(counts, y, L, beta, delta, gamma
 setGlobalVariables.celda_G = function(counts, y, L){
   cG.global_previousY <<- integer(length(y))
   cG.global_yChanged <<- TRUE
-  cG.global_n.C.by.TS <<- t(rowsum.y(counts, y=y, L=L))
+  cG.global_n.C.by.TS <<- t(rowSumByGroup(counts, group=y, L=L))
   cG.global_n.by.G <<- 0
   cG.global_n.by.TS <<- 0
   cG.global_nG.by.TS <<- 0
@@ -472,8 +472,8 @@ cG.decomposeCounts = function(counts, y, L) {
   nG = cG.global_nG
   
   if(cG.global_yChanged){
-    cG.global_n.C.by.TS = t(rowsum.y(counts, y=y, L=L))
-    cG.global_n.by.TS = as.integer(rowsum.y(matrix(n.by.G,ncol=1), y=y, L=L))
+    cG.global_n.C.by.TS = t(rowSumByGroup(counts, group=y, L=L))
+    cG.global_n.by.TS = as.integer(rowSumByGroup(matrix(n.by.G,ncol=1), group=y, L=L))
     cG.global_nG.by.TS = as.integer(table(factor(y, 1:L)))
   }
   n.C.by.TS = cG.global_n.C.by.TS
