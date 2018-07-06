@@ -92,7 +92,7 @@ celda_G = function(counts, L, beta=1, delta=1, gamma=1,
   do.gene.split = TRUE
   while(iter <= max.iter & num.iter.without.improvement <= stop.iter) {
 
-  	next.y = cG.calcGibbsProbY(counts=counts, n.TS.by.C=n.TS.by.C, n.by.TS=n.by.TS, nG.by.TS=nG.by.TS, n.by.G=n.by.G, y=y, nG=nG, L=L, beta=beta, delta=delta, gamma=gamma, random.state.order=random.state.order)
+  	next.y = cG.calcGibbsProbY(counts=counts, n.C.by.TS=c(n.TS.by.C), n.by.TS=n.by.TS, nG.by.TS=nG.by.TS, n.by.G=n.by.G, y=y, nG=nG, L=L, beta=beta, delta=delta, gamma=gamma, random.state.order=random.state.order)
   	n.TS.by.C = next.y$n.TS.by.C
   	nG.by.TS = next.y$nG.by.TS
   	n.by.TS = next.y$n.by.TS
@@ -512,7 +512,7 @@ clusterProbability.celda_G = function(celda.mod, counts, log=FALSE, ...) {
   
   ## Calculate counts one time up front
   p = cG.decomposeCounts(counts=counts, y=y, L=L)
-  next.y = cG.calcGibbsProbY(counts=counts, n.TS.by.C=p$n.TS.by.C, n.by.TS=p$n.by.TS, nG.by.TS=p$nG.by.TS, n.by.G=p$n.by.G, y=y, nG=p$nG, L=L, beta=beta, delta=delta, gamma=gamma, do.sample=FALSE)  
+  next.y = cG.calcGibbsProbY(counts=counts, n.C.by.TS=t(p$n.TS.by.C), n.by.TS=p$n.by.TS, nG.by.TS=p$nG.by.TS, n.by.G=p$n.by.G, y=y, nG=p$nG, L=L, beta=beta, delta=delta, gamma=gamma, do.sample=FALSE)  
   y.prob = t(next.y$probs)
   
   if(!isTRUE(log)) {
