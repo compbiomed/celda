@@ -480,7 +480,7 @@ cG.decomposeCounts = function(counts, y, L) {
   n.by.TS = cG.global_n.by.TS
   nG.by.TS = cG.global_nG.by.TS
   
-  return(list(n.TS.by.C=n.TS.by.C, n.by.G=n.by.G, n.by.TS=n.by.TS, nG.by.TS=nG.by.TS, nM=nM, nG=nG))
+  return(list(n.C.by.TS=n.C.by.TS, n.by.G=n.by.G, n.by.TS=n.by.TS, nG.by.TS=nG.by.TS, nM=nM, nG=nG))
 }
 
 
