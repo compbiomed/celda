@@ -392,7 +392,7 @@ setGlobalVariables.celda_C = function(counts, K, s, z){
   cC.global_nG <<- 0
   cC.global_nM <<- 0
   cC.global_m.CP.by.S <<- matrix(as.integer(table(factor(z, levels=1:K), s)), ncol=length(unique(s)))
-  cC.global_n.G.by.CP <<- t(rowsum.z(counts, z=z, K=K))
+  cC.global_n.G.by.CP <<- colSumByGroup(counts, group=z, K=K)
   cC.global_n.CP <<- 0
   cC.global_n.by.C <<- 0
   cC.globalFlag <<- FALSE
