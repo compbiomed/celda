@@ -327,13 +327,13 @@ factorizeMatrix.celda_G = function(counts, celda.mod, type=c("counts", "proporti
   gamma = celda.mod$gamma
   
   p = cG.decomposeCounts(counts=counts, y=y, L=L)
-  n.TS.by.C = p$n.TS.by.C
+  n.TS.by.C = t(p$n.C.by.TS)
   n.by.G = p$n.by.G
   n.by.TS = p$n.by.TS
   nG.by.TS = p$nG.by.TS
   nM = p$nM
   nG = p$nG
-  rm(p)
+  #rm(p)
   
   nG.by.TS[nG.by.TS == 0] = 1  
   n.G.by.TS = matrix(0, nrow=length(y), ncol=L)
@@ -446,7 +446,7 @@ setGlobalVariables.celda_G = function(counts, y, L){
   cG.global_n.C.by.TS <<- t(rowSumByGroup(counts, group=y, L=L))
   cG.global_n.by.G <<- 0
   cG.global_n.by.TS <<- 0
-  cG.global_nG.by.TS <<- 0
+  cG.global_nG.by.TS <<- as.integer(table(factor(y, 1:L)))
   cG.global_globalFlag <<- FALSE
   cG.global_variables_set <<- TRUE
 }
