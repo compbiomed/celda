@@ -23,6 +23,7 @@ available_models = c("celda_C", "celda_G", "celda_CG")
 #' @param split.on.iter On every 'split.on.iter' iteration, a heuristic will be applied to determine if a gene/cell cluster should be reassigned and another gene/cell cluster should be split into two clusters. Default 10.
 #' @param nchains The number of chains of Gibbs sampling to run for every combination of K/L parameters. Defaults to 1 (celda_G / celda_CG only)
 #' @param bestChainsOnly Return only the best chain (by final log-likelihood) per K/L combination.
+#' @param random.state.order Whether to sample genes / cells in a random order when performing Gibbs sampling. Defaults to TRUE.
 #' @param cores The number of cores to use for parallell Gibbs sampling. Defaults to 1.
 #' @param seed The base seed for random number generation
 #' @param verbose Print log messages during celda chain execution
@@ -32,14 +33,14 @@ available_models = c("celda_C", "celda_G", "celda_CG")
 #' @export
 celda = function(counts, model, sample.label=NULL, K=NULL, L=NULL, alpha=1, beta=1, 
                  delta=1, gamma=1, max.iter=200, z.init=NULL, y.init=NULL,
-                 stop.iter=10, split.on.iter=10, nchains=1, 
+                 stop.iter=10, split.on.iter=10, nchains=1, random.state.order=TRUE, 
                  bestChainsOnly=TRUE, cores=1, seed=12345, verbose=FALSE, 
                  logfile_prefix="Celda") {
  
   validateArgs(counts, model, sample.label, nchains, cores, seed, K=K, L=L)
   params.list = buildParamList(counts, model, sample.label, alpha, beta, delta,
                                gamma, max.iter, z.init, y.init, stop.iter, split.on.iter,
-                               nchains, cores, seed)
+                               nchains, cores, seed, random.state.order)
   
   # Redirect stderr from the worker threads if user asks for verbose
   if(!is.null(logfile_prefix)) {
@@ -66,7 +67,8 @@ celda = function(counts, model, sample.label=NULL, K=NULL, L=NULL, alpha=1, beta
   count.checksum = digest::digest(counts, algo="md5")
   params.list$count.checksum = count.checksum
    
-   res.list = foreach(i = 1:nrow(run.params), .export=model, .combine = c, .multicombine=TRUE) %dopar% {
+   #res.list = foreach(i = 1:nrow(run.params), .export=model, .combine = c, .multicombine=TRUE) %dopar% {
+   res.list = sapply(1:nrow(run.params), function(i){
     chain.params = append(params.list,
                           as.list(dplyr::select(run.params[i,],
                                                 dplyr::matches("K|L"))))
@@ -82,7 +84,7 @@ celda = function(counts, model, sample.label=NULL, K=NULL, L=NULL, alpha=1, beta
       res = suppressMessages(do.call(model, chain.params))
     }
     return(list(res))
-  }
+  })
   parallel::stopCluster(cl)
   celda.res = list(run.params=run.params, res.list=res.list, 
                    content.type=model, count.checksum=count.checksum)
@@ -110,12 +112,13 @@ celda = function(counts, model, sample.label=NULL, K=NULL, L=NULL, alpha=1, beta
 # validating the provided parameters along the way
 buildParamList = function(counts, model, sample.label, alpha, beta, delta,
                           gamma, max.iter, z.init, y.init, stop.iter, split.on.iter,
-                          nchains, cores, seed) {
+                          nchains, cores, seed, random.state.order) {
   
   params.list = list(counts=counts,
                      max.iter=max.iter,
                      stop.iter=stop.iter,
-                     split.on.iter=split.on.iter)
+                     split.on.iter=split.on.iter,
+                     random.state.order=random.state.order)
   
   if (model %in% c("celda_C", "celda_CG")) {
     params.list$alpha = alpha
