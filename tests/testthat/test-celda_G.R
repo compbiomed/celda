@@ -1,5 +1,6 @@
 #celda_G
 library(celda)
+library(testthat)
 context("Testing celda_G")
 
 load("../celdaGsim.rda")
