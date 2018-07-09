@@ -51,7 +51,7 @@
 celda_C = function(counts, sample.label=NULL, K, alpha=1, beta=1,
 					         algorithm = c("EM", "Gibbs"), stop.iter = 10, max.iter=200, 
 					         split.on.iter=10, split.on.last=TRUE,
-                 	 random.state.orderr=TRUE, count.checksum=NULL, seed=12345,
+                 	 random.state.order=TRUE, count.checksum=NULL, seed=12345,
                  	 z.init = NULL, logfile=NULL) {
   
   ## Error checking and variable processing
