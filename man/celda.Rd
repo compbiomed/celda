@@ -6,8 +6,9 @@
 \usage{
 celda(counts, model, sample.label = NULL, K = NULL, L = NULL, alpha = 1,
   beta = 1, delta = 1, gamma = 1, max.iter = 200, z.init = NULL,
-  y.init = NULL, stop.iter = 10, split.on.iter = 10, nchains = 1,
-  bestChainsOnly = TRUE, cores = 1, seed = 12345, verbose = FALSE,
+  y.init = NULL, stop.iter = 10, split.on.iter = 10,
+  process.counts = FALSE, nchains = 1, bestChainsOnly = TRUE,
+  random.state.order = TRUE, cores = 1, seed = 12345, verbose = FALSE,
   logfile_prefix = "Celda")
 }
 \arguments{
@@ -42,6 +43,8 @@ celda(counts, model, sample.label = NULL, K = NULL, L = NULL, alpha = 1,
 \item{nchains}{The number of chains of Gibbs sampling to run for every combination of K/L parameters. Defaults to 1 (celda_G / celda_CG only)}
 
 \item{bestChainsOnly}{Return only the best chain (by final log-likelihood) per K/L combination.}
+
+\item{random.state.order}{Whether to sample genes / cells in a random order when performing Gibbs sampling. Defaults to TRUE.}
 
 \item{cores}{The number of cores to use for parallell Gibbs sampling. Defaults to 1.}
 

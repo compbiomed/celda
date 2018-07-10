@@ -6,7 +6,8 @@
 \usage{
 celda_G(counts, L, beta = 1, delta = 1, gamma = 1, stop.iter = 10,
   max.iter = 200, split.on.iter = 10, split.on.last = TRUE,
-  count.checksum = NULL, seed = 12345, y.init = NULL, logfile = NULL)
+  random.state.ordder = TRUE, count.checksum = NULL, seed = 12345,
+  y.init = NULL, logfile = NULL)
 }
 \arguments{
 \item{counts}{A numeric count matrix}
@@ -34,6 +35,8 @@ celda_G(counts, L, beta = 1, delta = 1, gamma = 1, stop.iter = 10,
 \item{y.init}{Initial values of y. If NULL, y will be randomly sampled. Default NULL.}
 
 \item{logfile}{The name of the logfile to redirect messages to.}
+
+\item{random.state.order}{Whether to sample genes in a random order when performing Gibbs sampling. Defaults to TRUE.}
 }
 \description{
 Provides cluster assignments for all genes in a provided single-cell 

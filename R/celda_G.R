@@ -305,6 +305,7 @@ cG.calcGibbsProbY = function(counts.t, n.C.by.TS, n.by.TS, nG.by.TS, n.by.G, y, 
         new_nG.by.TS_delta_sum -
         (new_nG_sum * lgamma_of_delta) -
         new_n.by.TS_plus_nG.by.TS_sum
+    }
 
 	## Sample next state and add back counts
 	prev.y = y[i]
