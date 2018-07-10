@@ -41,6 +41,7 @@
 #' @param max.iter Maximum iterations of inference algorithm to perform regardless of convergence. Default 200.
 #' @param split.on.iter On every 'split.on.iter' iteration, a heuristic will be applied to determine if a gene/cell cluster should be reassigned and another gene/cell cluster should be split into two clusters. Default 10.
 #' @param split.on.last After the the chain has converged according to 'stop.iter', a heuristic will be applied to determine if a gene/cell cluster should be reassigned and another gene/cell cluster should be split into two clusters. If a split occurs, then 'stop.iter' will be reset. Default TRUE.
+#' @param random.state.order Whether to sample cells in a random order when performing Gibbs sampling. Defaults to TRUE.
 #' @param count.checksum An MD5 checksum for the provided counts matrix
 #' @param seed Parameter to set.seed() for random number generation
 #' @param z.init Initial values of z. If NULL, z will be randomly sampled. Default NULL.
@@ -50,7 +51,7 @@
 celda_C = function(counts, sample.label=NULL, K, alpha=1, beta=1,
 					 algorithm = c("EM", "Gibbs"), 
                  	 stop.iter = 10, max.iter=200, split.on.iter=10, split.on.last=TRUE,
-                 	 count.checksum=NULL, seed=12345,
+                 	 random.state.order=TRUE, count.checksum=NULL, seed=12345,
                  	 z.init = NULL, logfile=NULL) {
   
   ## Error checking and variable processing
@@ -72,6 +73,10 @@ celda_C = function(counts, sample.label=NULL, K, alpha=1, beta=1,
   z = initialize.cluster(K, ncol(counts), initial = z.init, fixed = NULL, seed=seed)
   z.best = z
   
+  # Global variables for decomposeCounts
+  setGlobalVariables.celda_C(counts, K, s, z)
+
+  
   ## Calculate counts one time up front
   p = cC.decomposeCounts(counts, s, z, K)
   nS = p$nS
@@ -83,7 +88,7 @@ celda_C = function(counts, sample.label=NULL, K, alpha=1, beta=1,
   n.by.C = p$n.by.C
   
   ll = cC.calcLL(m.CP.by.S=m.CP.by.S, n.G.by.CP=n.G.by.CP, s=s, K=K, nS=nS, nG=nG, alpha=alpha, beta=beta)
-
+  
   set.seed(seed)
   logMessages(date(), "... Starting celda_C to cluster cells.", logfile=logfile, append=FALSE)
   
@@ -93,8 +98,6 @@ celda_C = function(counts, sample.label=NULL, K, alpha=1, beta=1,
   while(iter <= max.iter & num.iter.without.improvement <= stop.iter) {
     message(paste("Iteration: ", iter))
     
-#   next.z = cC.calcGibbsProbZ(counts=counts, m.CP.by.S=m.CP.by.S, n.G.by.CP=n.G.by.CP, n.by.C=n.by.C, n.CP=n.CP, z=z, s=s, K=K, nG=nG, nM=nM, alpha=alpha, beta=beta)
-#	next.z = cC.calcEMProbZ(counts=counts, m.CP.by.S=m.CP.by.S, n.G.by.CP=n.G.by.CP, n.by.C=n.by.C, n.CP=n.CP, z=z, s=s, K=K, nG=nG, nM=nM, alpha=alpha, beta=beta)
     next.z = do.call(algorithm.fun, list(counts=counts, m.CP.by.S=m.CP.by.S, n.G.by.CP=n.G.by.CP, n.by.C=n.by.C, n.CP=n.CP, z=z, s=s, K=K, nG=nG, nM=nM, alpha=alpha, beta=beta))
     m.CP.by.S = next.z$m.CP.by.S
     n.G.by.CP = next.z$n.G.by.CP
@@ -106,24 +109,24 @@ celda_C = function(counts, sample.label=NULL, K, alpha=1, beta=1,
 
       logMessages(date(), " ... Determining if any cell clusters should be split.", logfile=logfile, append=TRUE, sep="")
       res = split.each.z(counts=counts, z=z, K=K, z.prob=t(next.z$probs), alpha=alpha, beta=beta, s=s, LLFunction="calculateLoglikFromVariables.celda_C")
-      logMessages(res$message, logfile=logfile, append=TRUE)
-
-	  # Reset convergence counter if a split occured
-	  if(!isTRUE(all.equal(z, res$z))) {
-		num.iter.without.improvement = 0L
-		do.cell.split = TRUE
-	  } else {
-		do.cell.split = FALSE
-	  }
-            
+      #logMessages(res$message, logfile=logfile, append=TRUE)
+      
+      # Reset convergence counter if a split occured
+      if(!isTRUE(all.equal(z, res$z))) {
+        num.iter.without.improvement = 0L
+        do.cell.split = TRUE
+      } else {
+        do.cell.split = FALSE
+      }
+      
       ## Re-calculate variables
       z = res$z
       m.CP.by.S = matrix(as.integer(table(factor(z, levels=1:K), s)), ncol=nS)
       n.G.by.CP = colSumByGroup(counts, group=z, K=K)
       n.CP = as.integer(colSums(n.G.by.CP))
     }
-
-
+    
+    
     ## Calculate complete likelihood
     temp.ll = cC.calcLL(m.CP.by.S=m.CP.by.S, n.G.by.CP=n.G.by.CP, s=s, K=K, nS=nS, nG=nG, alpha=alpha, beta=beta)
     if((all(temp.ll > ll)) | iter == 1) {
@@ -135,12 +138,12 @@ celda_C = function(counts, sample.label=NULL, K, alpha=1, beta=1,
     }
     ll = c(ll, temp.ll)
     
-    logMessages(date(), "... Completed iteration:", iter, "| logLik:", temp.ll, logfile=logfile, append=TRUE)
+    #logMessages(date(), "... Completed iteration:", iter, "| logLik:", temp.ll, logfile=logfile, append=TRUE)
     iter = iter + 1    
   }
-    
+  
   names = list(row=rownames(counts), column=colnames(counts), sample=levels(sample.label))
-
+  
   result = list(z=z.best, completeLogLik=ll,  
                 finalLogLik=ll.best, seed=seed, K=K, 
                 sample.label=sample.label, alpha=alpha, 
@@ -155,16 +158,17 @@ celda_C = function(counts, sample.label=NULL, K, alpha=1, beta=1,
 
 
 # Gibbs sampling for the celda_C Model
-cC.calcGibbsProbZ = function(counts, m.CP.by.S, n.G.by.CP, n.by.C, n.CP, z, s, K, nG, nM, alpha, beta, do.sample=TRUE) {
-
+cC.calcGibbsProbZ = function(counts, m.CP.by.S, n.G.by.CP, n.by.C, n.CP, z, s, K, nG, nM, alpha, beta, do.sample=TRUE, random.state.order=TRUE) {
+  
+  #print("calling optimized")
   ## Set variables up front outside of loop  
   probs = matrix(NA, ncol=nM, nrow=K)
-#  temp.n.G.by.CP = n.G.by.CP
-#  temp.n.CP = n.CP
-#  n.G.by.CP_1 = n.G.by.CP
-#  n.G.by.CP_2 = n.G.by.CP
 
-  ix = sample(1:nM)
+  if(isTRUE(random.state.order)) {
+    ix = sample(1:nM)
+  } else {
+    ix = rev(1:nM)
+  }
   for(i in ix) {
 
 	## Subtract cell counts from current population assignment
@@ -251,10 +255,11 @@ cC.calcEMProbZ = function(counts, m.CP.by.S, n.G.by.CP, n.by.C, n.CP, z, s, K, n
 #' @param ... Other arguments
 #' @export
 simulateCells.celda_C = function(model, S=10, C.Range=c(10, 100), N.Range=c(100,5000), 
-                         G=500, K=5, alpha=1, beta=1, seed=12345, ...) {
- 
+                                 G=500, K=5, alpha=1, beta=1, seed=12345, ...) {
+  
+  cC.global_simCellsFlag <<- TRUE
   set.seed(seed) 
-    
+  
   phi <- rdirichlet(K, rep(beta, G))
   theta <- rdirichlet(S, rep(alpha, K))
   
@@ -264,7 +269,7 @@ simulateCells.celda_C = function(model, S=10, C.Range=c(10, 100), N.Range=c(100,
   
   ## Select state of the cells  
   z <- unlist(lapply(1:S, function(i) sample(1:K, size=nC[i], prob=theta[i,], replace=TRUE)))
-    
+  
   ## Select number of transcripts per cell
   nN <- sample(N.Range[1]:N.Range[2], size=length(cell.sample.label), replace=TRUE)
   
@@ -274,7 +279,7 @@ simulateCells.celda_C = function(model, S=10, C.Range=c(10, 100), N.Range=c(100,
   rownames(cell.counts) = paste0("Gene_", 1:nrow(cell.counts))
   colnames(cell.counts) = paste0("Cell_", 1:ncol(cell.counts)) 
   cell.sample.label = paste0("Sample_", 1:S)[cell.sample.label]
-
+  
   ## Peform reordering on final Z and Y assigments:
   names = list(row=rownames(cell.counts), column=colnames(cell.counts), 
                sample=unique(cell.sample.label))
@@ -286,9 +291,9 @@ simulateCells.celda_C = function(model, S=10, C.Range=c(10, 100), N.Range=c(100,
   class(result) = "celda_C" 
   result = reorder.celda_C(counts = cell.counts, res = result)
   
+  cC.global_simCellsFlag <<-FALSE
   return(list(z=result$z, counts=processCounts(cell.counts), sample.label=cell.sample.label, K=K, alpha=alpha, beta=beta, C.Range=C.Range, N.Range=N.Range, S=S))
 }
-
 
 #' Generate factorized matrices showing each feature's influence on the celda_C model clustering 
 #' 
@@ -304,22 +309,22 @@ factorizeMatrix.celda_C = function(counts, celda.mod, type=c("counts", "proporti
   beta = celda.mod$beta
   sample.label = celda.mod$sample.label
   s = processSampleLabels(sample.label, ncol(counts))
-        
+
   p = cC.decomposeCounts(counts, s, z, K)
   m.CP.by.S = p$m.CP.by.S
   n.G.by.CP = p$n.G.by.CP
-    
+  
   K.names = paste0("K", 1:K)
   rownames(n.G.by.CP) = celda.mod$names$row
   colnames(n.G.by.CP) = K.names
   rownames(m.CP.by.S) = K.names
   colnames(m.CP.by.S) = celda.mod$names$sample
-
+  
   counts.list = c()
   prop.list = c()
   post.list = c()
   res = list()
-                
+  
   if(any("counts" %in% type)) {
     counts.list = list(sample.states=m.CP.by.S, gene.states=n.G.by.CP)
     res = c(res, list(counts=counts.list))
@@ -329,7 +334,7 @@ factorizeMatrix.celda_C = function(counts, celda.mod, type=c("counts", "proporti
     unique.z = sort(unique(z))
     temp.n.G.by.CP = n.G.by.CP
     temp.n.G.by.CP[,unique.z] = normalizeCounts(temp.n.G.by.CP[,unique.z], scale.factor=1)
-
+    
     prop.list = list(sample.states = normalizeCounts(m.CP.by.S, scale.factor=1),
                      gene.states = temp.n.G.by.CP)
     res = c(res, list(proportions=prop.list))
@@ -339,7 +344,7 @@ factorizeMatrix.celda_C = function(counts, celda.mod, type=c("counts", "proporti
                      gene.states = normalizeCounts(n.G.by.CP + beta, scale.factor=1))
     res = c(res, posterior = list(post.list))                           
   }
-
+  
   return(res)
 }
 
@@ -385,6 +390,21 @@ calculateLoglikFromVariables.celda_C = function(counts, sample.label, z, K, alph
   return(final)
 }
 
+setGlobalVariables.celda_C = function(counts, K, s, z){
+  cC.global_previousZ <<- integer(length(z)) # vector of 0s
+  cC.global_previousS <<- 0
+  cC.global_zChanged <<- TRUE
+  cC.global_sChanged <<- TRUE
+  cC.global_nS <<- 0
+  cC.global_nG <<- 0
+  cC.global_nM <<- 0
+  cC.global_m.CP.by.S <<- matrix(as.integer(table(factor(z, levels=1:K), s)), ncol=length(unique(s)))
+  cC.global_n.G.by.CP <<- t(rowsum.z(counts, z=z, K=K))
+  cC.global_n.CP <<- 0
+  cC.global_n.by.C <<- 0
+  cC.globalFlag <<- FALSE
+  cC.global_variables_set <<- TRUE
+}
 
 #' Takes raw counts matrix and converts it to a series of matrices needed for log likelihood calculation
 #' @param counts A numeric count matrix
@@ -392,14 +412,41 @@ calculateLoglikFromVariables.celda_C = function(counts, sample.label, z, K, alph
 #' @param z A numeric vector of cluster assignments
 #' @param K The total number of clusters in z
 cC.decomposeCounts = function(counts, s, z, K) {
-  nS = length(unique(s))
-  nG = nrow(counts)
-  nM = ncol(counts)
-
-  m.CP.by.S = matrix(as.integer(table(factor(z, levels=1:K), s)), ncol=nS)
-  n.G.by.CP = colSumByGroup(counts, group=z, K=K)
-  n.CP = as.integer(colSums(n.G.by.CP))
-  n.by.C = as.integer(colSums(counts))
+  if (!exists('cC.global_variables_set')){
+    setGlobalVariables.celda_C(counts, K, s, z)
+  }
+  
+  cC.global_zChanged <<- if(identical(cC.global_previousZ, z)) FALSE else TRUE
+  cC.global_previousZ <<- z
+  cC.global_sChanged <<- if(identical(cC.global_previousS, s)) FALSE else TRUE
+  cC.global_previousS <<- s
+  
+  if(!cC.globalFlag){
+    cC.global_n.by.C <<- as.integer(colSums(counts))
+    cC.global_nG <<- nrow(counts)
+    cC.global_nM <<- ncol(counts)
+    cC.globalFlag = TRUE
+  }
+  n.by.C = cC.global_n.by.C
+  nG = cC.global_nG 
+  nM = cC.global_nM 
+  
+  if(cC.global_sChanged){
+    cC.global_nS <<- length(unique(s))
+  }
+  nS = cC.global_nS
+  
+  if(cC.global_zChanged || cC.global_sChanged){
+    cC.global_m.CP.by.S <<- matrix(as.integer(table(factor(z, levels=1:K), s)), ncol=nS)
+  }
+  m.CP.by.S = cC.global_m.CP.by.S
+  
+  if(cC.global_zChanged){
+    cC.global_n.G.by.CP = colSumByGroup(counts, group=z, K=K)
+    cC.global_n.CP = as.integer(colSums(cC.global_n.G.by.CP))
+  }
+  n.G.by.CP = cC.global_n.G.by.CP
+  n.CP = cC.global_n.CP
   
   return(list(m.CP.by.S=m.CP.by.S, n.G.by.CP=n.G.by.CP, n.CP=n.CP, n.by.C=n.by.C, nS=nS, nG=nG, nM=nM))
 }
@@ -414,7 +461,7 @@ cC.decomposeCounts = function(counts, s, z, K) {
 #' @return A list containging a matrix for the conditional cell cluster probabilities. 
 #' @export
 clusterProbability.celda_C = function(celda.mod, counts, log=FALSE, ...) {
-
+  
   z = celda.mod$z
   sample.label = celda.mod$sample.label
   s = processSampleLabels(sample.label, ncol(counts))
@@ -431,7 +478,7 @@ clusterProbability.celda_C = function(celda.mod, counts, log=FALSE, ...) {
   if(!isTRUE(log)) {
     z.prob = normalizeLogProbs(z.prob)
   }
-   
+  
   return(list(z.probability=z.prob))
 }
 
@@ -504,5 +551,3 @@ getL.celda_C = function(celda.mod) { return(NA) }
 celdaHeatmap.celda_C = function(celda.mod, counts, ...) {
   renderCeldaHeatmap(counts, z=celda.mod$z, ...)
 }
-
-
