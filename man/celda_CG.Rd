@@ -8,7 +8,7 @@ celda_CG(counts, sample.label = NULL, K, L, alpha = 1, beta = 1,
   delta = 1, gamma = 1, algorithm = c("EM", "Gibbs"), stop.iter = 10,
   max.iter = 200, split.on.iter = 10, split.on.last = TRUE,
   seed = 12345, count.checksum = NULL, z.init = NULL, y.init = NULL,
-  logfile = NULL)
+  random.state.order = TRUE, logfile = NULL)
 }
 \arguments{
 \item{counts}{A numeric count matrix.}
@@ -44,6 +44,8 @@ celda_CG(counts, sample.label = NULL, K, L, alpha = 1, beta = 1,
 \item{z.init}{Initial values of z. If NULL, z will be randomly sampled. Default NULL.}
 
 \item{y.init}{Initial values of y. If NULL, y will be randomly sampled. Default NULL.}
+
+\item{random.state.order}{Whether to sample genes / cells in a random order when performing Gibbs sampling. Defaults to TRUE.}
 
 \item{logfile}{The name of the logfile to redirect messages to.}
 }
