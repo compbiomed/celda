@@ -151,7 +151,7 @@ celdaTsne = function(counts, celda.mod, max.cells=10000, min.cluster.size=100, s
   ## Select a subset of cells to sample if greater than 'max.cells'
   total.cells.to.remove = ncol(norm) - max.cells
   z.include = rep(TRUE, ncol(norm))
-  if(total.cells.to.sample > 0) {
+  if(total.cells.to.remove > 0) {
     if(class(celda.mod) %in% c("celda_CG", "celda_CG")) {
       z.ta = tabulate(celda.mod$z, celda.mod$K)
       
@@ -170,7 +170,7 @@ celdaTsne = function(counts, celda.mod, max.cells=10000, min.cluster.size=100, s
         z.include[sample(which(celda.mod$z == i), cluster.n.to.sample[i])] = FALSE
       }
     } else {
-      z.include[sample(1:ncol(norm), total.cells.to.sample)] = FALSE
+      z.include[sample(1:ncol(norm), total.cells.to.remove)] = FALSE
     }
   }   
   cell.ix = which(z.include)
