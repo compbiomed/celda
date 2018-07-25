@@ -4,13 +4,18 @@
 \alias{celdaTsne}
 \title{Runs tSNE via Rtsne based on the CELDA model and specified cell states.}
 \usage{
-celdaTsne(counts, celda.mod, states = NULL, perplexity = 20,
-  max.iter = 2500, distance = "hellinger", seed = 12345)
+celdaTsne(counts, celda.mod, max.cells = 10000, min.cluster.size = 100,
+  states = NULL, perplexity = 20, max.iter = 2500,
+  distance = "hellinger", seed = 12345)
 }
 \arguments{
 \item{counts}{Counts matrix, should have cell name for column name and gene name for row name.}
 
 \item{celda.mod}{Celda model to use for tsne. class "celda_C","celda_G" or "celda_CG".}
+
+\item{max.cells}{Integer; Maximum number of cells to plot. Cells will be randomly subsampled if ncol(conts) > max.cells. Larger numbers of cells requires more memory. Default 10000.}
+
+\item{min.cluster.size}{Integer; Do not subsample cell clusters below this threshold. Default 100.}
 
 \item{states}{Numeric vector; determines which cell populations to use for tsne. If none are defined, all states will be used.}
 

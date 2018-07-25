@@ -13,6 +13,9 @@
 #' @export
 plotDrGrid <- function(dim1, dim2, matrix, size, xlab, ylab, color_low, color_mid, color_high, var_label){
   df <- data.frame(dim1,dim2,t(as.data.frame(matrix)))
+  na.ix = is.na(dim1) | is.na(dim2)
+  df = df[!na.ix,]
+  
   m <- reshape2::melt(df, id.vars = c("dim1","dim2"))
   colnames(m) <- c(xlab,ylab,"facet",var_label)
   ggplot2::ggplot(m, ggplot2::aes_string(x=xlab, y=ylab)) + ggplot2::geom_point(stat = "identity", size = size, ggplot2::aes_string(color = var_label)) + 
@@ -90,6 +93,9 @@ plotDrState <- function(dim1, dim2, matrix, rescale = TRUE, size = 1, xlab = "Di
 plotDrCluster <- function(dim1, dim2, cluster, size = 1, xlab = "Dimension_1", ylab = "Dimension_2", specific_clusters = NULL){
   df <- data.frame(dim1, dim2, cluster)
   colnames(df) <- c(xlab,ylab,"Cluster")
+  na.ix = is.na(dim1) | is.na(dim2)
+  df = df[!na.ix,]
+  
   if(!is.null(specific_clusters)){
     df[3][!(df[[3]] %in% specific_clusters),] <- 0
     df <- df[order(df[[3]]),]
@@ -110,16 +116,21 @@ plotDrCluster <- function(dim1, dim2, cluster, size = 1, xlab = "Dimension_1", y
 #' 
 #' @param counts Counts matrix, should have cell name for column name and gene name for row name.
 #' @param celda.mod Celda model to use for tsne. class "celda_C","celda_G" or "celda_CG".
+#' @param max.cells Integer; Maximum number of cells to plot. Cells will be randomly subsampled if ncol(conts) > max.cells. Larger numbers of cells requires more memory. Default 10000.
+#' @param min.cluster.size Integer; Do not subsample cell clusters below this threshold. Default 100. 
 #' @param states Numeric vector; determines which cell populations to use for tsne. If none are defined, all states will be used.
 #' @param perplexity Numeric vector; determines perplexity for tsne. Default 20.
 #' @param max.iter Numeric vector; determines iterations for tsne. Default 1000.
 #' @param distance Character vector; determines which distance metric to use for tsne. Options: cosine, hellinger, spearman.
 #' @param seed Seed for random number generation. Defaults to 12345.
 #' @export
-celdaTsne = function(counts, celda.mod, states=NULL, perplexity=20, max.iter=2500, distance="hellinger", seed=12345) {
+celdaTsne = function(counts, celda.mod, max.cells=10000, min.cluster.size=100, states=NULL, perplexity=20, max.iter=2500, distance="hellinger", seed=12345) {
   if (!isTRUE(class(celda.mod) %in% c("celda_CG","celda_C","celda_G"))) {
     stop("celda.mod argument is not of class celda_C, celda_G or celda_CG")
   } 
+  distance = match.arg(distance, choices = c("hellinger","cosine","spearman"))
+  
+  set.seed(seed)
   
   if (class(celda.mod) == "celda_CG") {
     fm = factorizeMatrix(counts=counts, celda.mod=celda.mod, type="counts")
@@ -136,23 +147,54 @@ celdaTsne = function(counts, celda.mod, states=NULL, perplexity=20, max.iter=250
   } else {
     norm = normalizeCounts(counts = counts, scale.factor = 1)
   }
+
+  ## Select a subset of cells to sample if greater than 'max.cells'
+  total.cells.to.remove = ncol(norm) - max.cells
+  z.include = rep(TRUE, ncol(norm))
+  if(total.cells.to.sample > 0) {
+    if(class(celda.mod) %in% c("celda_CG", "celda_CG")) {
+      z.ta = tabulate(celda.mod$z, celda.mod$K)
+      
+      ## Number of cells that can be sampled from each cluster without going below the minimum threshold
+      cluster.cells.to.sample = z.ta - min.cluster.size          
+      cluster.cells.to.sample[cluster.cells.to.sample < 0] = 0
+      
+      ## Number of cells to sample after exluding smaller clusters
+      ## Rounding can cause number to be off by 1, so ceiling is used with a second round of subsampling
+      cluster.n.to.sample = ceiling((cluster.cells.to.sample / sum(cluster.cells.to.sample)) * total.cells.to.remove)
+      diff = sum(cluster.n.to.sample) - total.cells.to.remove 
+      cluster.n.to.sample[which.max(cluster.n.to.sample)] = cluster.n.to.sample[which.max(cluster.n.to.sample)] - diff
+
+      ## Perform sampling for each cluster
+      for(i in which(cluster.n.to.sample > 0)) {
+        z.include[sample(which(celda.mod$z == i), cluster.n.to.sample[i])] = FALSE
+      }
+    } else {
+      z.include[sample(1:ncol(norm), total.cells.to.sample)] = FALSE
+    }
+  }   
+  cell.ix = which(z.include)
+
+  ## Generate distances  
   
-  distance = match.arg(distance, choices = c("hellinger","cosine","spearman"))
   if (distance == "cosine") {
-    d = cosineDist(norm)  
+    d = cosineDist(norm[,cell.ix])  
   } else if(distance == "hellinger") {
-    d = hellingerDist(norm)  
+    d = hellingerDist(norm[,cell.ix])  
   } else if(distance == "spearman") {
-    d = spearmanDist(norm)
+    d = spearmanDist(norm[,cell.ix])
   } else {
     stop("distances must be either 'cosine' or 'hellinger' or 'spearman")
   }
   
   do.pca = class(celda.mod) == "celda_C"
-  set.seed(seed)
+
   res = Rtsne::Rtsne(d, pca=do.pca, max_iter=max.iter, perplexity = perplexity, 
                      check_duplicates = FALSE, is_distance = TRUE)$Y
-  colnames(res) = c("tsne_1", "tsne_2")
-  return(res)
+                     
+  final = matrix(NA, nrow=ncol(norm), ncol=2)
+  final[cell.ix,] = res
+  colnames(final) = c("tsne_1", "tsne_2")
+  return(final)
 }
 
