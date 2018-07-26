@@ -41,8 +41,9 @@
 #' @param max.iter Maximum iterations of inference algorithm to perform regardless of convergence. Default 200.
 #' @param split.on.iter On every 'split.on.iter' iteration, a heuristic will be applied to determine if a gene/cell cluster should be reassigned and another gene/cell cluster should be split into two clusters. Default 10.
 #' @param split.on.last After the the chain has converged according to 'stop.iter', a heuristic will be applied to determine if a gene/cell cluster should be reassigned and another gene/cell cluster should be split into two clusters. If a split occurs, then 'stop.iter' will be reset. Default TRUE.
-#' @param count.checksum An MD5 checksum for the provided counts matrix
-#' @param seed Parameter to set.seed() for random number generation
+#' @param seed Parameter to set.seed() for random number generation. Default 12345.
+#' @param nchain Number of random z/y initializations. Default 1. 
+#' @param count.checksum An MD5 checksum for the provided counts matrix. Default NULL.
 #' @param z.init Initial values of z. If NULL, z will be randomly sampled. Default NULL.
 #' @param logfile If NULL, messages will be displayed as normal. If set to a file name, messages will be redirected messages to the file. Default NULL.
 #' @return An object of class celda_C with clustering results and Gibbs sampling statistics
@@ -50,7 +51,7 @@
 celda_C = function(counts, sample.label=NULL, K, alpha=1, beta=1,
 					 algorithm = c("EM", "Gibbs"), 
                  	 stop.iter = 10, max.iter=200, split.on.iter=10, split.on.last=TRUE,
-                 	 count.checksum=NULL, seed=12345,
+                 	 seed=12345, nchains=1, count.checksum=NULL, 
                  	 z.init = NULL, logfile=NULL) {
   
   ## Error checking and variable processing
@@ -67,93 +68,105 @@ celda_C = function(counts, sample.label=NULL, K, alpha=1, beta=1,
 
   algorithm <- match.arg(algorithm)
   algorithm.fun <- ifelse(algorithm == "Gibbs", "cC.calcGibbsProbZ", "cC.calcEMProbZ")
+
+  all.seeds = seed:(seed + nchains - 1)
   
-  ## Randomly select z and y or set z/y to supplied initial values
-  z = initialize.cluster(K, ncol(counts), initial = z.init, fixed = NULL, seed=seed)
-  z.best = z
+  logMessages("--------------------------------------------------------------------", logfile=logfile, append=FALSE)  
+  logMessages("Celda_C: Clustering cells.", logfile=logfile, append=FALSE)
+  logMessages("--------------------------------------------------------------------", logfile=logfile, append=FALSE)  
+
+  best.result = NULL  
+  for(i in seq_along(all.seeds)) { 
   
-  ## Calculate counts one time up front
-  p = cC.decomposeCounts(counts, s, z, K)
-  nS = p$nS
-  nG = p$nG
-  nM = p$nM
-  m.CP.by.S = p$m.CP.by.S
-  n.G.by.CP = p$n.G.by.CP
-  n.CP = p$n.CP
-  n.by.C = p$n.by.C
+	## Randomly select z or set z to supplied initial values
+	current.seed = all.seeds[i]	
+	z = initialize.cluster(K, ncol(counts), initial = z.init, fixed = NULL, seed=current.seed)
+	z.best = z
   
-  ll = cC.calcLL(m.CP.by.S=m.CP.by.S, n.G.by.CP=n.G.by.CP, s=s, K=K, nS=nS, nG=nG, alpha=alpha, beta=beta)
-
-  set.seed(seed)
-  logMessages(date(), "... Starting celda_C to cluster cells.", logfile=logfile, append=FALSE)
+	## Calculate counts one time up front
+	p = cC.decomposeCounts(counts, s, z, K)
+	nS = p$nS
+	nG = p$nG
+	nM = p$nM
+	m.CP.by.S = p$m.CP.by.S
+	n.G.by.CP = p$n.G.by.CP
+	n.CP = p$n.CP
+	n.by.C = p$n.by.C
   
-  iter = 1L
-  num.iter.without.improvement = 0L
-  do.cell.split = TRUE
-  while(iter <= max.iter & num.iter.without.improvement <= stop.iter) {
-    
-#   next.z = cC.calcGibbsProbZ(counts=counts, m.CP.by.S=m.CP.by.S, n.G.by.CP=n.G.by.CP, n.by.C=n.by.C, n.CP=n.CP, z=z, s=s, K=K, nG=nG, nM=nM, alpha=alpha, beta=beta)
-#	next.z = cC.calcEMProbZ(counts=counts, m.CP.by.S=m.CP.by.S, n.G.by.CP=n.G.by.CP, n.by.C=n.by.C, n.CP=n.CP, z=z, s=s, K=K, nG=nG, nM=nM, alpha=alpha, beta=beta)
-    next.z = do.call(algorithm.fun, list(counts=counts, m.CP.by.S=m.CP.by.S, n.G.by.CP=n.G.by.CP, n.by.C=n.by.C, n.CP=n.CP, z=z, s=s, K=K, nG=nG, nM=nM, alpha=alpha, beta=beta))
+	ll = cC.calcLL(m.CP.by.S=m.CP.by.S, n.G.by.CP=n.G.by.CP, s=s, K=K, nS=nS, nG=nG, alpha=alpha, beta=beta)
 
-    m.CP.by.S = next.z$m.CP.by.S
-    n.G.by.CP = next.z$n.G.by.CP
-    n.CP = next.z$n.CP
-    z = next.z$z
+    logMessages(date(), ".. Starting chain", i, "with seed", current.seed, logfile=logfile, append=FALSE)
 
-    ## Perform split on i-th iteration of no improvement in log likelihood
-    if(K > 2 & (((iter == max.iter | num.iter.without.improvement == stop.iter) & isTRUE(split.on.last)) | (split.on.iter > 0 & iter %% split.on.iter == 0 & isTRUE(do.cell.split)))) {
+	set.seed(seed)
+	iter = 1L
+	num.iter.without.improvement = 0L
+	do.cell.split = TRUE
+	while(iter <= max.iter & num.iter.without.improvement <= stop.iter) {
+	
+	  next.z = do.call(algorithm.fun, list(counts=counts, m.CP.by.S=m.CP.by.S, n.G.by.CP=n.G.by.CP, n.by.C=n.by.C, n.CP=n.CP, z=z, s=s, K=K, nG=nG, nM=nM, alpha=alpha, beta=beta))
 
-      logMessages(date(), " ... Determining if any cell clusters should be split.", logfile=logfile, append=TRUE, sep="")
-	  res = cC.splitZ(counts, m.CP.by.S, n.G.by.CP, s, z, K, nS, nG, alpha, beta, z.prob=t(next.z$probs), max.clusters.to.try=10, min.cell=3)
-      logMessages(res$message, logfile=logfile, append=TRUE)
+	  m.CP.by.S = next.z$m.CP.by.S
+	  n.G.by.CP = next.z$n.G.by.CP
+	  n.CP = next.z$n.CP
+	  z = next.z$z
 
-	  # Reset convergence counter if a split occured
-	  if(!isTRUE(all.equal(z, res$z))) {
-		num.iter.without.improvement = 0L
-		do.cell.split = TRUE
-	  } else {
-		do.cell.split = FALSE
+	  ## Perform split on i-th iteration of no improvement in log likelihood
+	  if(K > 2 & (((iter == max.iter | num.iter.without.improvement == stop.iter) & isTRUE(split.on.last)) | (split.on.iter > 0 & iter %% split.on.iter == 0 & isTRUE(do.cell.split)))) {
+
+		logMessages(date(), " .... Determining if any cell clusters should be split.", logfile=logfile, append=TRUE, sep="")
+		res = cC.splitZ(counts, m.CP.by.S, n.G.by.CP, s, z, K, nS, nG, alpha, beta, z.prob=t(next.z$probs), max.clusters.to.try=10, min.cell=3)
+		logMessages(res$message, logfile=logfile, append=TRUE)
+
+		# Reset convergence counter if a split occured
+		if(!isTRUE(all.equal(z, res$z))) {
+		  num.iter.without.improvement = 0L
+		  do.cell.split = TRUE
+		} else {
+		  do.cell.split = FALSE
+		}
+			
+		## Re-calculate variables
+		z = res$z
+		m.CP.by.S = res$m.CP.by.S
+		n.G.by.CP = res$n.G.by.CP
+		n.CP = res$n.CP
 	  }
-            
-      ## Re-calculate variables
-      z = res$z
-      #m.CP.by.S = matrix(as.integer(table(factor(z, levels=1:K), s)), ncol=nS)
-      #n.G.by.CP = colSumByGroup(counts, group=z, K=K)
-      #n.CP = as.integer(colSums(n.G.by.CP))
-      m.CP.by.S = res$m.CP.by.S
-      n.G.by.CP = res$n.G.by.CP
-      n.CP = res$n.CP
-    }
 
 
-    ## Calculate complete likelihood
-    temp.ll = cC.calcLL(m.CP.by.S=m.CP.by.S, n.G.by.CP=n.G.by.CP, s=s, K=K, nS=nS, nG=nG, alpha=alpha, beta=beta)
-    if((all(temp.ll > ll)) | iter == 1) {
-      z.best = z
-      ll.best = temp.ll
-      num.iter.without.improvement = 1L
-    } else {  
-      num.iter.without.improvement = num.iter.without.improvement + 1L   
-    }
-    ll = c(ll, temp.ll)
-    
-    logMessages(date(), "... Completed iteration:", iter, "| logLik:", temp.ll, logfile=logfile, append=TRUE)
-    iter = iter + 1    
-  }
-    
-  names = list(row=rownames(counts), column=colnames(counts), sample=levels(sample.label))
+	  ## Calculate complete likelihood
+	  temp.ll = cC.calcLL(m.CP.by.S=m.CP.by.S, n.G.by.CP=n.G.by.CP, s=s, K=K, nS=nS, nG=nG, alpha=alpha, beta=beta)
+	  if((all(temp.ll > ll)) | iter == 1) {
+		z.best = z
+		ll.best = temp.ll
+		num.iter.without.improvement = 1L
+	  } else {  
+		num.iter.without.improvement = num.iter.without.improvement + 1L   
+	  }
+	  ll = c(ll, temp.ll)
+	
+	  logMessages(date(), ".... Completed iteration:", iter, "| logLik:", temp.ll, logfile=logfile, append=TRUE)
+	  iter = iter + 1    
+	}
+	
+	names = list(row=rownames(counts), column=colnames(counts), sample=levels(sample.label))
 
-  result = list(z=z.best, completeLogLik=ll,  
-                finalLogLik=ll.best, seed=seed, K=K, 
-                sample.label=sample.label, alpha=alpha, 
-                beta=beta, count.checksum=count.checksum, 
-                names=names)
+	result = list(z=z.best, completeLogLik=ll,  
+				  finalLogLik=ll.best, seed=current.seed, K=K, 
+				  sample.label=sample.label, alpha=alpha, 
+				  beta=beta, count.checksum=count.checksum, 
+				  names=names)
   
-  class(result) = "celda_C"
-  result = reorder.celda_C(counts = counts, res = result)
+	class(result) = "celda_C"
+	
+    if(is.null(best.result) || result$finalLogLik > best.result$finalLogLik) {
+      best.result = result
+    }
+    
+    logMessages(date(), ".. Finished chain", i, "with seed", current.seed, logfile=logfile, append=FALSE)
+  }  
   
-  return(result)
+  best.result = reorder.celda_C(counts = counts, res = best.result)
+  return(best.result)
 }
 
 

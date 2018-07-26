@@ -45,15 +45,16 @@
 #' @param max.iter Maximum iterations of Gibbs sampling to perform regardless of convergence. Default 200.
 #' @param split.on.iter On every 'split.on.iter' iteration, a heuristic will be applied to determine if a gene/cell cluster should be reassigned and another gene/cell cluster should be split into two clusters. Default 10.
 #' @param split.on.last After the the chain has converged according to 'stop.iter', a heuristic will be applied to determine if a gene/cell cluster should be reassigned and another gene/cell cluster should be split into two clusters. If a split occurs, then 'stop.iter' will be reset. Default TRUE.
-#' @param count.checksum An MD5 checksum for the provided counts matrix
-#' @param seed Parameter to set.seed() for random number generation.
+#' @param seed Parameter to set.seed() for random number generation. Default 12345.
+#' @param nchain Number of random z/y initializations. Default 1. 
+#' @param count.checksum An MD5 checksum for the provided counts matrix. Default NULL.
 #' @param y.init Initial values of y. If NULL, y will be randomly sampled. Default NULL.
 #' @param logfile The name of the logfile to redirect messages to.
 #' @keywords LDA gene clustering gibbs
 #' @export
 celda_G = function(counts, L, beta=1, delta=1, gamma=1,
 					stop.iter=10, max.iter=200, split.on.iter=10, split.on.last=TRUE,
-					count.checksum=NULL, seed=12345, 
+					seed=12345, nchains=1, count.checksum=NULL, 
 					y.init=NULL, logfile=NULL) {
 
   ## Error checking and variable processing
@@ -63,82 +64,97 @@ celda_G = function(counts, L, beta=1, delta=1, gamma=1,
     count.checksum = digest::digest(counts, algo="md5")
   }
 
-  ## Randomly select z and y or set z/y to supplied initial values
-  y = initialize.cluster(L, nrow(counts), initial = y.init, fixed = NULL, seed=seed)
-  y.best = y  
-
-  ## Calculate counts one time up front
-  p = cG.decomposeCounts(counts=counts, y=y, L=L)
-  n.TS.by.C = p$n.TS.by.C
-  n.by.G = p$n.by.G
-  n.by.TS = p$n.by.TS
-  nG.by.TS = p$nG.by.TS
-  nM = p$nM
-  nG = p$nG
-  rm(p)
-
-  set.seed(seed)
-  logMessages(date(), "... Starting celda_G to cluster genes.", logfile=logfile, append=FALSE)
+  all.seeds = seed:(seed + nchains - 1)
   
-  ## Calculate initial log likelihood
-  ll <- cG.calcLL(n.TS.by.C=n.TS.by.C, n.by.TS=n.by.TS, n.by.G=n.by.G, nG.by.TS=nG.by.TS, nM=nM, nG=nG, L=L, beta=beta, delta=delta, gamma=gamma)
+  logMessages("--------------------------------------------------------------------", logfile=logfile, append=FALSE)  
+  logMessages("Celda_G: Clustering genes.", logfile=logfile, append=FALSE)
+  logMessages("--------------------------------------------------------------------", logfile=logfile, append=FALSE)  
 
-  iter <- 1L
-  num.iter.without.improvement = 0L
-  do.gene.split = TRUE
-  while(iter <= max.iter & num.iter.without.improvement <= stop.iter) {
+  best.result = NULL  
+  for(i in seq_along(all.seeds)) {   
 
-	next.y = cG.calcGibbsProbY(counts=counts, n.TS.by.C=n.TS.by.C, n.by.TS=n.by.TS, nG.by.TS=nG.by.TS, n.by.G=n.by.G, y=y, nG=nG, L=L, beta=beta, delta=delta, gamma=gamma)
-	n.TS.by.C = next.y$n.TS.by.C
-	nG.by.TS = next.y$nG.by.TS
-	n.by.TS = next.y$n.by.TS
-	y = next.y$y
-    
-    ## Perform split on i-th iteration of no improvement in log likelihood
-    if(L > 2 & (((iter == max.iter | num.iter.without.improvement == stop.iter) & isTRUE(split.on.last)) | (split.on.iter > 0 & iter %% split.on.iter == 0 & isTRUE(do.gene.split)))) {
-      logMessages(date(), " ... Determining if any gene clusters should be split.", logfile=logfile, append=TRUE, sep="")
-      res = cG.splitY(counts, y, n.TS.by.C, n.by.TS, n.by.G, nG.by.TS, nM, nG, L, beta, delta, gamma, y.prob=t(next.y$probs), min=3, max.clusters.to.try=10)
-      logMessages(res$message, logfile=logfile, append=TRUE)
-      
-	  # Reset convergence counter if a split occured	    
-	  if(!isTRUE(all.equal(y, res$y))) {
-		num.iter.without.improvement = 1L
-		do.gene.split = TRUE
-	  } else {
-		do.gene.split = FALSE
-	  }
+	## Randomly select y or y to supplied initial values
+	current.seed = all.seeds[i]	
+	y = initialize.cluster(L, nrow(counts), initial = y.init, fixed = NULL, seed=current.seed)
+	y.best = y  
+
+	## Calculate counts one time up front
+	p = cG.decomposeCounts(counts=counts, y=y, L=L)
+	n.TS.by.C = p$n.TS.by.C
+	n.by.G = p$n.by.G
+	n.by.TS = p$n.by.TS
+	nG.by.TS = p$nG.by.TS
+	nM = p$nM
+	nG = p$nG
+	rm(p)
+
+	set.seed(seed)
+  
+	## Calculate initial log likelihood
+	ll <- cG.calcLL(n.TS.by.C=n.TS.by.C, n.by.TS=n.by.TS, n.by.G=n.by.G, nG.by.TS=nG.by.TS, nM=nM, nG=nG, L=L, beta=beta, delta=delta, gamma=gamma)
+
+	iter <- 1L
+	num.iter.without.improvement = 0L
+	do.gene.split = TRUE
+	while(iter <= max.iter & num.iter.without.improvement <= stop.iter) {
+
+	  next.y = cG.calcGibbsProbY(counts=counts, n.TS.by.C=n.TS.by.C, n.by.TS=n.by.TS, nG.by.TS=nG.by.TS, n.by.G=n.by.G, y=y, nG=nG, L=L, beta=beta, delta=delta, gamma=gamma)
+	  n.TS.by.C = next.y$n.TS.by.C
+	  nG.by.TS = next.y$nG.by.TS
+	  n.by.TS = next.y$n.by.TS
+	  y = next.y$y
+	
+	  ## Perform split on i-th iteration of no improvement in log likelihood
+	  if(L > 2 & (((iter == max.iter | num.iter.without.improvement == stop.iter) & isTRUE(split.on.last)) | (split.on.iter > 0 & iter %% split.on.iter == 0 & isTRUE(do.gene.split)))) {
+		logMessages(date(), " .... Determining if any gene clusters should be split.", logfile=logfile, append=TRUE, sep="")
+		res = cG.splitY(counts, y, n.TS.by.C, n.by.TS, n.by.G, nG.by.TS, nM, nG, L, beta, delta, gamma, y.prob=t(next.y$probs), min=3, max.clusters.to.try=10)
+		logMessages(res$message, logfile=logfile, append=TRUE)
 	  
-      ## Re-calculate variables
-      y = res$y
-      n.TS.by.C = res$n.TS.by.C
-      n.by.TS = res$n.by.TS
-      nG.by.TS = res$nG.by.TS
-    }
-     
-    ## Calculate complete likelihood
-    temp.ll <- cG.calcLL(n.TS.by.C=n.TS.by.C, n.by.TS=n.by.TS, n.by.G=n.by.G, nG.by.TS=nG.by.TS, nM=nM, nG=nG, L=L, beta=beta, delta=delta, gamma=gamma)
-    if((all(temp.ll > ll)) | iter == 1) {
-      y.best = y
-      ll.best = temp.ll
-      num.iter.without.improvement = 1L
-    } else {  
-      num.iter.without.improvement = num.iter.without.improvement + 1L   
-    }
-    ll <- c(ll, temp.ll)
+		# Reset convergence counter if a split occured	    
+		if(!isTRUE(all.equal(y, res$y))) {
+		  num.iter.without.improvement = 1L
+		  do.gene.split = TRUE
+		} else {
+		  do.gene.split = FALSE
+		}
+	  
+		## Re-calculate variables
+		y = res$y
+		n.TS.by.C = res$n.TS.by.C
+		n.by.TS = res$n.by.TS
+		nG.by.TS = res$nG.by.TS
+	  }
+	 
+	  ## Calculate complete likelihood
+	  temp.ll <- cG.calcLL(n.TS.by.C=n.TS.by.C, n.by.TS=n.by.TS, n.by.G=n.by.G, nG.by.TS=nG.by.TS, nM=nM, nG=nG, L=L, beta=beta, delta=delta, gamma=gamma)
+	  if((all(temp.ll > ll)) | iter == 1) {
+		y.best = y
+		ll.best = temp.ll
+		num.iter.without.improvement = 1L
+	  } else {  
+		num.iter.without.improvement = num.iter.without.improvement + 1L   
+	  }
+	  ll <- c(ll, temp.ll)
 
-    logMessages(date(), " ... Completed iteration: ", iter, " | logLik: ", temp.ll, logfile=logfile, append=TRUE, sep="")
-
-    iter <- iter + 1L
-  }
+	  logMessages(date(), ".... Completed iteration:", iter, "| logLik:", temp.ll, logfile=logfile, append=TRUE)
+	  iter = iter + 1    	  
+    }
     
-  names = list(row=rownames(counts), column=colnames(counts))  
+	names = list(row=rownames(counts), column=colnames(counts))  
 
-  result = list(y=y.best, completeLogLik=ll, 
-                finalLogLik=ll.best, L=L, beta=beta, delta=delta, gamma=gamma,
-                count.checksum=count.checksum, seed=seed, names=names)
-  class(result) = "celda_G"
-  result = reorder.celda_G(counts = counts, res = result)
+	result = list(y=y.best, completeLogLik=ll, 
+				  finalLogLik=ll.best, L=L, beta=beta, delta=delta, gamma=gamma,
+				  count.checksum=count.checksum, seed=current.seed, names=names)
+	class(result) = "celda_G"
+	
+	if(is.null(best.result) || result$finalLogLik > best.result$finalLogLik) {
+      best.result = result
+    }
+    
+    logMessages(date(), ".. Finished chain", i, "with seed", current.seed, logfile=logfile, append=FALSE)
+  } 
   
+  result = reorder.celda_G(counts = counts, res = result) 
   return(result)
 }
 

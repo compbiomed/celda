@@ -7,8 +7,8 @@
 celda_CG(counts, sample.label = NULL, K, L, alpha = 1, beta = 1,
   delta = 1, gamma = 1, algorithm = c("EM", "Gibbs"), stop.iter = 10,
   max.iter = 200, split.on.iter = 10, split.on.last = TRUE,
-  seed = 12345, count.checksum = NULL, z.init = NULL, y.init = NULL,
-  logfile = NULL)
+  seed = 12345, nchains = 1, count.checksum = NULL, z.init = NULL,
+  y.init = NULL, logfile = NULL)
 }
 \arguments{
 \item{counts}{A numeric count matrix.}
@@ -37,15 +37,17 @@ celda_CG(counts, sample.label = NULL, K, L, alpha = 1, beta = 1,
 
 \item{split.on.last}{After the the chain has converged according to 'stop.iter', a heuristic will be applied to determine if a gene/cell cluster should be reassigned and another gene/cell cluster should be split into two clusters. If a split occurs, then 'stop.iter' will be reset. Default TRUE.}
 
-\item{seed}{Parameter to set.seed() for random number generation}
+\item{seed}{Parameter to set.seed() for random number generation. Default 12345.}
 
-\item{count.checksum}{An MD5 checksum for the provided counts matrix}
+\item{count.checksum}{An MD5 checksum for the provided counts matrix. Default NULL.}
 
 \item{z.init}{Initial values of z. If NULL, z will be randomly sampled. Default NULL.}
 
 \item{y.init}{Initial values of y. If NULL, y will be randomly sampled. Default NULL.}
 
 \item{logfile}{The name of the logfile to redirect messages to.}
+
+\item{nchain}{Number of random z/y initializations. Default 1.}
 }
 \description{
 celda Cell and Gene Clustering Model
