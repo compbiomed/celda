@@ -112,6 +112,7 @@ plotDrCluster <- function(dim1, dim2, cluster, size = 1, xlab = "Dimension_1", y
     ggplot2::guides(color = ggplot2::guide_legend(override.aes = list(size = 1)))
 }
 
+<<<<<<< HEAD
 #' Runs tSNE via Rtsne based on the CELDA model and specified cell states.
 #' 
 #' @param counts Counts matrix, should have cell name for column name and gene name for row name.
@@ -176,7 +177,6 @@ celdaTsne = function(counts, celda.mod, max.cells=10000, min.cluster.size=100, s
   cell.ix = which(z.include)
 
   ## Generate distances  
-  
   if (distance == "cosine") {
     d = cosineDist(norm[,cell.ix])  
   } else if(distance == "hellinger") {
