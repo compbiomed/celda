@@ -534,8 +534,51 @@ celdaHeatmap.celda_C = function(celda.mod, counts, ...) {
 }
 
 
-celdaTsne.celda_C = function(counts, celda.mod, states=NULL, perplexity=20, max.iter=2500, 
-                             distance="hellinger", seed=12345) {
-  norm = normalizeCounts(counts = counts, scale.factor = 1)
-  return(createCeldaTsne(norm, celda.mod, states, perplexity, max.iter, distance, seed))
+#' Embeds cells in two dimensions using tSNE based on celda_C results.
+#' 
+#' @param counts Counts matrix, should have cell name for column name and gene name for row name.
+#' @param celda.mod Celda model to use for tsne. 
+#' @param max.cells Integer; Maximum number of cells to plot. Cells will be randomly subsampled if ncol(conts) > max.cells. Larger numbers of cells requires more memory. Default 10000.
+#' @param min.cluster.size Integer; Do not subsample cell clusters below this threshold. Default 100. 
+#' @param initial.dims PCA will be used to reduce the dimentionality of the dataset. The top 'initial.dims' principal components will be used for tSNE.
+#' @param perplexity Numeric vector; determines perplexity for tSNE. Default 20.
+#' @param max.iter Numeric vector; determines iterations for tsne. Default 1000.
+#' @param distance Character vector; determines which distance metric to use for tSNE. One of 'hellinger', 'cosine', 'spearman'.
+#' @param seed Seed for random number generation. Default 12345.
+#' @export
+celdaTsne.celda_C = function(counts, celda.mod,  
+							 max.cells=10000, min.cluster.size=100, initial.dims=20,
+							 perplexity=20, max.iter=2500, seed=12345) {
+
+  norm = sqrt(normalizeCounts(counts, scale.factor=1))
+
+  ## Select a subset of cells to sample if greater than 'max.cells'
+  total.cells.to.remove = ncol(norm) - max.cells
+  z.include = rep(TRUE, ncol(norm))
+  if(total.cells.to.remove > 0) {
+	z.ta = tabulate(celda.mod$z, celda.mod$K)
+	
+	## Number of cells that can be sampled from each cluster without going below the minimum threshold
+	cluster.cells.to.sample = z.ta - min.cluster.size          
+	cluster.cells.to.sample[cluster.cells.to.sample < 0] = 0
+	
+	## Number of cells to sample after exluding smaller clusters
+	## Rounding can cause number to be off by a few, so ceiling is used with a second round of subtraction
+	cluster.n.to.sample = ceiling((cluster.cells.to.sample / sum(cluster.cells.to.sample)) * total.cells.to.remove)
+	diff = sum(cluster.n.to.sample) - total.cells.to.remove 
+	cluster.n.to.sample[which.max(cluster.n.to.sample)] = cluster.n.to.sample[which.max(cluster.n.to.sample)] - diff
+
+	## Perform sampling for each cluster
+	for(i in which(cluster.n.to.sample > 0)) {
+	  z.include[sample(which(celda.mod$z == i), cluster.n.to.sample[i])] = FALSE
+	}
+  }   
+  cell.ix = which(z.include)
+
+  res = calculateTsne(norm[,cell.ix], perplexity=perplexity, max.iter=max.iter, distance="euclidean", seed=seed, do.pca=TRUE, initial.dims = initial.dims)
+  final = matrix(NA, nrow=ncol(norm), ncol=2)
+  final[cell.ix,] = res
+  rownames(final) = colnames(norm)
+  colnames(final) = c("tsne_1", "tsne_2")
+  return(final)
 }

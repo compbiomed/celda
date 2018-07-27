@@ -570,8 +570,32 @@ celdaHeatmap.celda_G = function(celda.mod, counts, ...) {
 }
 
 
+#' Embeds cells in two dimensions using tSNE based on celda_CG results.
+#' 
+#' @param counts Counts matrix, should have cell name for column name and gene name for row name.
+#' @param celda.mod Celda model to use for tsne. 
+#' @param states Numeric vector; determines which gene states to use for tSNE. If NULL, all states will be used. Default NULL.
+#' @param perplexity Numeric vector; determines perplexity for tSNE. Default 20.
+#' @param max.iter Numeric vector; determines iterations for tsne. Default 1000.
+#' @param distance Character vector; determines which distance metric to use for tSNE. One of 'hellinger', 'cosine', 'spearman'.
+#' @param seed Seed for random number generation. Default 12345.
+#' @export
 celdaTsne.celda_G = function(counts, celda.mod, states=NULL, perplexity=20, max.iter=2500, 
                              distance="hellinger", seed=12345) {
-  norm = normalizeCounts(counts = counts, scale.factor = 1)
-  return(createCeldaTsne(norm, celda.mod, states, perplexity, max.iter, distance, seed))
+                             
+  fm = factorizeMatrix(counts=counts, celda.mod=celda.mod, type="counts")
+    
+  states.to.use = 1:nrow(fm$counts$cell.states)
+  if (!is.null(states)) {
+	if (!all(states %in% states.to.use)) {
+	  stop("'states' must be a vector of numbers between 1 and ", states.to.use, ".")
+	}
+	states.to.use = states 
+  } 
+  norm = normalizeCounts(fm$counts$cell.states[states.to.use,], scale.factor=1)
+
+  res = calculateTsne(norm, do.pca=FALSE, perplexity=perplexity, max.iter=max.iter, distance=distance, seed=seed)
+  rownames(res) = colnames(norm)
+  colnames(res) = c("tsne_1", "tsne_2")
+  return(res)
 }
