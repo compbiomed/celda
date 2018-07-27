@@ -124,7 +124,7 @@ plotDrCluster <- function(dim1, dim2, cluster, size = 1, xlab = "Dimension_1", y
 #' @param distance Character vector; determines which distance metric to use for tsne. Options: cosine, hellinger, spearman.
 #' @param seed Seed for random number generation. Defaults to 12345.
 #' @export
-celdaTsne = function(counts, celda.mod, max.cells=10000, min.cluster.size=100, states=NULL, perplexity=20, max.iter=2500, distance="hellinger", seed=12345) {
+createCeldaTsne = function(counts, celda.mod, max.cells=10000, min.cluster.size=100, states=NULL, perplexity=20, max.iter=2500, distance="hellinger", seed=12345) {
   if (!isTRUE(class(celda.mod) %in% c("celda_CG","celda_C","celda_G"))) {
     stop("celda.mod argument is not of class celda_C, celda_G or celda_CG")
   } 

@@ -46,7 +46,7 @@
 #' @param split.on.iter On every 'split.on.iter' iteration, a heuristic will be applied to determine if a gene/cell cluster should be reassigned and another gene/cell cluster should be split into two clusters. Default 10.
 #' @param split.on.last After the the chain has converged according to 'stop.iter', a heuristic will be applied to determine if a gene/cell cluster should be reassigned and another gene/cell cluster should be split into two clusters. If a split occurs, then 'stop.iter' will be reset. Default TRUE.
 #' @param seed Parameter to set.seed() for random number generation. Default 12345.
-#' @param nchain Number of random z/y initializations. Default 1. 
+#' @param nchains Number of random y initializations. Default 3. 
 #' @param count.checksum An MD5 checksum for the provided counts matrix. Default NULL.
 #' @param y.init Initial values of y. If NULL, y will be randomly sampled. Default NULL.
 #' @param logfile The name of the logfile to redirect messages to.
@@ -54,7 +54,7 @@
 #' @export
 celda_G = function(counts, L, beta=1, delta=1, gamma=1,
 					stop.iter=10, max.iter=200, split.on.iter=10, split.on.last=TRUE,
-					seed=12345, nchains=1, count.checksum=NULL, 
+					seed=12345, nchains=3, count.checksum=NULL, 
 					y.init=NULL, logfile=NULL) {
 
   ## Error checking and variable processing

@@ -6,7 +6,7 @@
 \usage{
 celda_G(counts, L, beta = 1, delta = 1, gamma = 1, stop.iter = 10,
   max.iter = 200, split.on.iter = 10, split.on.last = TRUE,
-  seed = 12345, nchains = 1, count.checksum = NULL, y.init = NULL,
+  seed = 12345, nchains = 3, count.checksum = NULL, y.init = NULL,
   logfile = NULL)
 }
 \arguments{
@@ -30,13 +30,13 @@ celda_G(counts, L, beta = 1, delta = 1, gamma = 1, stop.iter = 10,
 
 \item{seed}{Parameter to set.seed() for random number generation. Default 12345.}
 
+\item{nchains}{Number of random y initializations. Default 3.}
+
 \item{count.checksum}{An MD5 checksum for the provided counts matrix. Default NULL.}
 
 \item{y.init}{Initial values of y. If NULL, y will be randomly sampled. Default NULL.}
 
 \item{logfile}{The name of the logfile to redirect messages to.}
-
-\item{nchain}{Number of random z/y initializations. Default 1.}
 }
 \description{
 Provides cluster assignments for all genes in a provided single-cell 

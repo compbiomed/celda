@@ -6,7 +6,7 @@
 \usage{
 celda_C(counts, sample.label = NULL, K, alpha = 1, beta = 1,
   algorithm = c("EM", "Gibbs"), stop.iter = 10, max.iter = 200,
-  split.on.iter = 10, split.on.last = TRUE, seed = 12345, nchains = 1,
+  split.on.iter = 10, split.on.last = TRUE, seed = 12345, nchains = 3,
   count.checksum = NULL, z.init = NULL, logfile = NULL)
 }
 \arguments{
@@ -32,13 +32,13 @@ celda_C(counts, sample.label = NULL, K, alpha = 1, beta = 1,
 
 \item{seed}{Parameter to set.seed() for random number generation. Default 12345.}
 
+\item{nchains}{Number of random z initializations. Default 3.}
+
 \item{count.checksum}{An MD5 checksum for the provided counts matrix. Default NULL.}
 
 \item{z.init}{Initial values of z. If NULL, z will be randomly sampled. Default NULL.}
 
 \item{logfile}{If NULL, messages will be displayed as normal. If set to a file name, messages will be redirected messages to the file. Default NULL.}
-
-\item{nchain}{Number of random z/y initializations. Default 1.}
 }
 \value{
 An object of class celda_C with clustering results and Gibbs sampling statistics
