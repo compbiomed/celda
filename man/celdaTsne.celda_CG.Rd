@@ -26,6 +26,8 @@
 \item{distance}{Character vector; determines which distance metric to use for tSNE. One of 'hellinger', 'cosine', 'spearman'.}
 
 \item{seed}{Seed for random number generation. Default 12345.}
+
+\item{...}{Further arguments passed to or from other methods.}
 }
 \description{
 Embeds cells in two dimensions using tSNE based on celda_CG results.

@@ -25,7 +25,7 @@
 
 \item{seed}{Seed for random number generation. Default 12345.}
 
-\item{...}{}
+\item{...}{Further arguments passed to or from other methods.}
 }
 \description{
 Embeds cells in two dimensions using tSNE based on celda_C results.

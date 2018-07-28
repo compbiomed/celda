@@ -645,7 +645,7 @@ celdaHeatmap.celda_CG = function(celda.mod, counts, ...) {
 #' @param max.iter Numeric vector; determines iterations for tsne. Default 1000.
 #' @param distance Character vector; determines which distance metric to use for tSNE. One of 'hellinger', 'cosine', 'spearman'.
 #' @param seed Seed for random number generation. Default 12345.
-#' @param ...
+#' @param ... Further arguments passed to or from other methods.
 #' @export
 celdaTsne.celda_CG = function(counts, celda.mod, max.cells=10000, min.cluster.size=100, states=NULL,
 								perplexity=20, max.iter=2500, distance="hellinger", seed=12345, ...) {
