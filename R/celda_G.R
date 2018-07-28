@@ -579,9 +579,10 @@ celdaHeatmap.celda_G = function(celda.mod, counts, ...) {
 #' @param max.iter Numeric vector; determines iterations for tsne. Default 1000.
 #' @param distance Character vector; determines which distance metric to use for tSNE. One of 'hellinger', 'cosine', 'spearman'.
 #' @param seed Seed for random number generation. Default 12345.
+#' @param ...
 #' @export
 celdaTsne.celda_G = function(counts, celda.mod, states=NULL, perplexity=20, max.iter=2500, 
-                             distance="hellinger", seed=12345) {
+                             distance="hellinger", seed=12345, ...) {
                              
   fm = factorizeMatrix(counts=counts, celda.mod=celda.mod, type="counts")
     

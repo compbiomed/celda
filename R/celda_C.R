@@ -544,10 +544,11 @@ celdaHeatmap.celda_C = function(celda.mod, counts, ...) {
 #' @param perplexity Numeric vector; determines perplexity for tSNE. Default 20.
 #' @param max.iter Numeric vector; determines iterations for tsne. Default 1000.
 #' @param seed Seed for random number generation. Default 12345.
+#' @param ... 
 #' @export
 celdaTsne.celda_C = function(counts, celda.mod,  
 							 max.cells=10000, min.cluster.size=100, initial.dims=20,
-							 perplexity=20, max.iter=2500, seed=12345) {
+							 perplexity=20, max.iter=2500, seed=12345, ...) {
 
   norm = sqrt(normalizeCounts(counts, scale.factor=1))
 

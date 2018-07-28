@@ -6,7 +6,7 @@
 \usage{
 \method{celdaTsne}{celda_C}(counts, celda.mod, max.cells = 10000,
   min.cluster.size = 100, initial.dims = 20, perplexity = 20,
-  max.iter = 2500, seed = 12345)
+  max.iter = 2500, seed = 12345, ...)
 }
 \arguments{
 \item{counts}{Counts matrix, should have cell name for column name and gene name for row name.}
@@ -24,6 +24,8 @@
 \item{max.iter}{Numeric vector; determines iterations for tsne. Default 1000.}
 
 \item{seed}{Seed for random number generation. Default 12345.}
+
+\item{...}{}
 }
 \description{
 Embeds cells in two dimensions using tSNE based on celda_C results.

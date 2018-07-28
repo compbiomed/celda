@@ -6,7 +6,7 @@
 \usage{
 \method{celdaTsne}{celda_G}(counts, celda.mod, states = NULL,
   perplexity = 20, max.iter = 2500, distance = "hellinger",
-  seed = 12345)
+  seed = 12345, ...)
 }
 \arguments{
 \item{counts}{Counts matrix, should have cell name for column name and gene name for row name.}
