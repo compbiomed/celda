@@ -22,8 +22,6 @@ calculateTsne(norm, perplexity = 20, max.iter = 2500,
 \item{do.pca}{Perform dimensionality reduction with PCA before tSNE.}
 
 \item{initial.dims}{Number of dimensions from PCA to use as input in tSNE.}
-
-\item{celda.mod}{Celda model to use for tsne. class "celda_C","celda_G" or "celda_CG".}
 }
 \description{
 Uses Rtsne package to run tSNE.

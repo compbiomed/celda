@@ -119,7 +119,6 @@ plotDrCluster <- function(dim1, dim2, cluster, size = 1, xlab = "Dimension_1", y
 #' Uses Rtsne package to run tSNE.
 #' 
 #' @param norm Normalized count matrix
-#' @param celda.mod Celda model to use for tsne. class "celda_C","celda_G" or "celda_CG".
 #' @param perplexity Numeric vector; determines perplexity for tsne. Default 20.
 #' @param max.iter Numeric vector; determines iterations for tsne. Default 1000.
 #' @param distance Character vector; determines which distance metric to use for tsne. Options: cosine, hellinger, spearman or euclidean.

@@ -543,7 +543,6 @@ celdaHeatmap.celda_C = function(celda.mod, counts, ...) {
 #' @param initial.dims PCA will be used to reduce the dimentionality of the dataset. The top 'initial.dims' principal components will be used for tSNE.
 #' @param perplexity Numeric vector; determines perplexity for tSNE. Default 20.
 #' @param max.iter Numeric vector; determines iterations for tsne. Default 1000.
-#' @param distance Character vector; determines which distance metric to use for tSNE. One of 'hellinger', 'cosine', 'spearman'.
 #' @param seed Seed for random number generation. Default 12345.
 #' @export
 celdaTsne.celda_C = function(counts, celda.mod,  

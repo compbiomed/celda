@@ -24,8 +24,6 @@
 \item{max.iter}{Numeric vector; determines iterations for tsne. Default 1000.}
 
 \item{seed}{Seed for random number generation. Default 12345.}
-
-\item{distance}{Character vector; determines which distance metric to use for tSNE. One of 'hellinger', 'cosine', 'spearman'.}
 }
 \description{
 Embeds cells in two dimensions using tSNE based on celda_C results.
