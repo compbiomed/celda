@@ -286,7 +286,7 @@ SEXP _mvMult(SEXP R_m, SEXP R_v, SEXP R_by_row)
 
 
 
-SEXP _rowSumByGroup_real(SEXP R_x, SEXP R_group)
+SEXP _rowSumByGroup_numeric(SEXP R_x, SEXP R_group)
 {
   int i, j;
   int nr = nrows(R_x);
@@ -328,7 +328,7 @@ SEXP _rowSumByGroup_real(SEXP R_x, SEXP R_group)
 
 
 
-SEXP _colSumByGroup_real(SEXP R_x, SEXP R_group)
+SEXP _colSumByGroup_numeric(SEXP R_x, SEXP R_group)
 {
   int i, j;
   int nr = nrows(R_x);

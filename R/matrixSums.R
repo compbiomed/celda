@@ -29,17 +29,17 @@ colSumByGroupChange <- function(x, px, group, pgroup, K) {
 }
 
 
-#' @useDynLib celda _rowSumByGroup_real 
-rowSumByGroup.real <- function(x, group, L) {
+#' @useDynLib celda _rowSumByGroup_numeric 
+rowSumByGroup.numeric <- function(x, group, L) {
   group <- factor(group, levels=1:L)
-  res <- .Call("_rowSumByGroup_real", x, group)
+  res <- .Call("_rowSumByGroup_numeric", x, group)
   return(res)
 }
 
-#' @useDynLib celda _colSumByGroup_real
-colSumByGroup.real <- function(x, group, K) {
+#' @useDynLib celda _colSumByGroup_numeric
+colSumByGroup.numeric <- function(x, group, K) {
   group <- factor(group, levels=1:K)
-  res <- .Call("_colSumByGroup_real", x, group)
+  res <- .Call("_colSumByGroup_numeric", x, group)
   return(res)
 }
 
