@@ -28,9 +28,15 @@ hellingerDist = function(x) {
 }  
 
 
+#normalizeLogProbs = function(ll.probs) {
+#  ll.probs <- exp(sweep(ll.probs, 1, base::apply(ll.probs, 1, max), "-"))
+#  probs <- sweep(ll.probs, 1, rowSums(ll.probs), "/")
+#  return(probs)
+#}
 normalizeLogProbs = function(ll.probs) {
-  ll.probs <- exp(sweep(ll.probs, 1, base::apply(ll.probs, 1, max), "-"))
-  probs <- sweep(ll.probs, 1, rowSums(ll.probs), "/")
+  if (is.integer(ll.probs)) {ll.probs <- ll.probs + 1e-20}
+  ll.probs <- exp(mvAdd(ll.probs, - base::apply(ll.probs, 1, max), by.row = TRUE  ))
+  probs <- mvMult(ll.probs, 1/rowSums(ll.probs), by.row = TRUE)
   return(probs)
 }
 
@@ -41,9 +47,14 @@ normalizeLogProbs = function(ll.probs) {
 #' @param scale.factor the scalar for the normalization 
 #' @export
 normalizeCounts = function(counts, scale.factor=1e6) {
-  counts.norm = sweep(counts, 2, colSums(counts) / scale.factor, "/")
+  if (is.integer(counts)) {counts <- counts + 1e-20}
+  counts.norm = mvMult(counts, 1/colSums(counts) *scale.factor, by.row = FALSE)
   return(counts.norm)
 }
+#normalizeCounts = function(counts, scale.factor=1e6) {
+#  counts.norm = sweep(counts, 2, colSums(counts) / scale.factor, "/")
+#  return(counts.norm)
+#}
   
   
 reorder.label.by.size = function(z, K) {
