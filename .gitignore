@@ -28,3 +28,5 @@ celda.Rproj
 .DS_Store
 src/*.o
 src/*.dll
+src/*.so
+etc/*
