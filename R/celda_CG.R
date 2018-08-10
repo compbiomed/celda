@@ -320,16 +320,12 @@ simulateCells.celda_CG = function(model, S=10, C.Range=c(50,100), N.Range=c(500,
 #' @param counts A numerix count matrix
 #' @param celda.mod object returned from celda_CG function 
 #' @param type one of the "counts", "proportion", or "posterior". 
-#' @param validate.counts Whether to verify that the counts matrix provided was used to generate the results in celda.mod. Defaults to TRUE.
 #' @return A list of factorized matrices, of the types requested by the user. NOTE: "population" state matrices are always returned in cell population (rows) x transcriptional states (cols).
 #' @export 
 factorizeMatrix.celda_CG = function(counts, celda.mod, 
-                                    type=c("counts", "proportion", "posterior"),
-                                    validate.counts = TRUE) {
+                                    type=c("counts", "proportion", "posterior")) {                             
   counts = processCounts(counts)
-  if (validate.counts) { 
-    compareCountMatrix(counts, celda.mod)
-  }
+  compareCountMatrix(counts, celda.mod)
   
   K = celda.mod$K
   L = celda.mod$L
@@ -550,10 +546,17 @@ clusterProbability.celda_CG = function(celda.mod, counts, log=FALSE, ...) {
 
 
 #' @export
-calculatePerplexity.celda_CG = function(counts, celda.mod, validate.counts) {
+calculatePerplexity.celda_CG = function(counts, celda.mod, new.counts=NULL) {
+  
+  if(is.null(new.counts)) {
+    new.counts = counts
+  }
+  if(nrow(new.counts) != nrow(counts)) {
+    stop("new.counts should have the same number of rows as counts.")
+  }
   
   factorized = factorizeMatrix(counts = counts, celda.mod = celda.mod, 
-                               type=c("posterior", "counts"), validate.counts)
+                               type=c("posterior", "counts"))
   theta = log(factorized$posterior$sample.states)
   phi   = factorized$posterior$population.states
   psi   = factorized$posterior$gene.states
@@ -563,10 +566,10 @@ calculatePerplexity.celda_CG = function(counts, celda.mod, validate.counts) {
   
   eta.prob = log(eta) * nG.by.TS
   gene.by.pop.prob = log(psi %*% phi)
-  inner.log.prob = (t(gene.by.pop.prob) %*% counts) + theta[, sl]  
+  inner.log.prob = (t(gene.by.pop.prob) %*% new.counts) + theta[, sl]  
   
   log.px = sum(apply(inner.log.prob, 2, matrixStats::logSumExp)) + sum(eta.prob)
-  perplexity = exp(-(log.px/sum(counts)))
+  perplexity = exp(-(log.px/sum(new.counts)))
   return(perplexity)
 }
 

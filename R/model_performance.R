@@ -11,10 +11,9 @@
 #' 
 #' @param counts The count matrix modeled in the celdaRun parameter
 #' @param celda.mod A single celda run (usually from the _res.list_ property of a celda_list)
-#' @param validate.counts Whether to verify that the counts matrix provided was used to generate the results in celda.mod. Defaults to TRUE.
 #' @return The perplexity for the provided data and model
 #' @export
-calculatePerplexity = function(counts, celda.mod, validate.counts=TRUE) {
+calculatePerplexity = function(counts, celda.mod) {
   compareCountMatrix(counts, celda.mod)
   UseMethod("calculatePerplexity", celda.mod)
 }
@@ -27,37 +26,31 @@ calculatePerplexity = function(counts, celda.mod, validate.counts=TRUE) {
 #' 
 #' @param celda.list A celda_list object as returned from *celda()*
 #' @param counts The counts matrix used to generate the provided celda.list
-#' @param resample The number of times to resample the counts matrix for evaluating perplexity. Works with method="perplexity."
+#' @param resample The number of times to resample the counts matrix for evaluating perplexity. Default 5.
 #' @param title Title to be appended to the perplexity plot title. Default is "".
 #' @param validate.counts Whether to verify that the counts matrix provided was used to generate the results in celda.mod. Defaults to TRUE.
 #' @return A list with a data frame summarizing all of the calculated perplexities, and a ggplot2 object visualizing them.
 #' @export
-calculatePerplexityWithResampling <- function(celda.list, counts, resample,
-                                              title="", validate.counts=TRUE) {
+calculatePerplexityWithResampling <- function(celda.list, counts, resample=5,
+                                              title="", validate.counts=TRUE, seed=12345) {
   if (!isTRUE(class(celda.list) == "celda_list")) stop("celda.list parameter was not of class celda_list.")
   if (!isTRUE(is.numeric(resample))) stop("Provided resample parameter was not numeric.")
   
+  set.seed(seed)
   countsList = list(counts)
   for(i in 1:resample) {
     countsList[[i]] = resampleCountMatrix(counts)
-    i = i - 1  
   }
+ 
+  perp.res = matrix(NA, nrow=length(celda.list$res.list), ncol=resample)
+  for(i in 1:length(celda.list$res.list)) {
+    for(j in 1:resample) {
+      perp.res[i,j] = calculatePerplexity(counts, celda.list$res.list[[i]], countsList[[j]])
+    }
+  }
+  celda.list$perplexity = perp.res
   
-  perplexities.per.model = lapply(celda.list$res.list, function(mod){
-    perplexities = lapply(countsList, function(counts, mod, validate.counts){ 
-      class(counts) = class(mod)
-      UseMethod("calculatePerplexity", object=mod)
-    }, mod, validate.counts)
-    
-    perplexity.df = data.frame(perplexity=unlist(perplexities))
-    if (!is.null(mod$K)) { perplexity.df$k = rep(mod$K, nrow(perplexity.df)) }
-    if (!is.null(mod$L)) { perplexity.df$l = rep(mod$L, nrow(perplexity.df)) }
-    return(perplexity.df)
-  })
-  
-  plot.df = do.call("rbind", perplexities.per.model)
-  plot = visualizePerplexity(plot.df)
-  return(list(perplexity.info=plot.df, plot=plot))
+  return(celda.list)
 }
 
 
@@ -74,36 +67,36 @@ calculatePerplexityWithResampling <- function(celda.list, counts, resample,
 #' @param title A subtitle for the plot
 #' @return A ggplot plot object showing perplexity as a function of clustering parameters
 #' @export
-visualizePerplexity = function(perplexity.df, title="") {
-  if (!any(c("k", "l") %in% colnames(perplexity.df)) | is.null(perplexity.df$perplexity)) {
-    stop("perplexity.df argument needs a perplexity column, and at least one of k or l.")
+visualizePerplexity.celda_CG = function(celda.list, title="") {
+  if (!any(c("K", "L") %in% colnames(celda.list$run.params)) | is.null(celda.list$perplexity)) {
+    stop("perplexity.df argument needs a perplexity column, and at least one of K or L.")
   }
   
   # First, decide what the discrete X-axis will be...
-  if (!is.null(perplexity.df$k)) {
-    plot = ggplot2::ggplot(perplexity.df, ggplot2::aes(x=as.factor(k), y=perplexity))
+  if (!is.null(perplexity.df$K)) {
+    plot = ggplot2::ggplot(perplexity.df, ggplot2::aes(x=as.factor(K), y=perplexity))
   } else {
-    plot = ggplot2::ggplot(perplexity.df, ggplot2::aes(x=as.factor(l), y=perplexity))
+    plot = ggplot2::ggplot(perplexity.df, ggplot2::aes(x=as.factor(L), y=perplexity))
   }
   # If we have both K and L, color points by their L, and draw lines between each L across K
-  if (!is.null(perplexity.df$k) & !is.null(perplexity.df$l)) { 
+  if (!is.null(perplexity.df$K) & !is.null(perplexity.df$L)) { 
     plot = plot + ggplot2::geom_jitter(height=0, width=0.1, 
-                                       ggplot2::aes(color=as.factor(perplexity.df$l))) +
+                                       ggplot2::aes(color=as.factor(perplexity.df$L))) +
           ggplot2::scale_color_discrete(name="L") 
     
     l.means.by.k = setNames(aggregate(perplexity.df$perplexity,
-                                    by=list(perplexity.df$k, perplexity.df$l),
+                                    by=list(perplexity.df$K, perplexity.df$L),
                                     FUN=mean),
-                          c("k", "l", "mean_perplexity"))
-   l.means.by.k$l = as.factor(l.means.by.k$l)
-   l.means.by.k$k = as.factor(l.means.by.k$k)
+                          c("K", "L", "mean_perplexity"))
+   l.means.by.k$l = as.factor(l.means.by.k$L)
+   l.means.by.k$k = as.factor(l.means.by.k$K)
    plot = plot + ggplot2::geom_path(data=l.means.by.k,
-                                    ggplot2::aes(x=k, y=mean_perplexity, group=l, color=l))
+                                    ggplot2::aes(x=K, y=mean_perplexity, group=L, color=L))
   } else {
     plot = plot + ggplot2::geom_jitter(height=0, width=0.1)
   }
   plot = plot +  ggplot2::ggtitle(paste("Perplexity for All Provided Chains", "\n", title)) + 
-         ggplot2::xlab(ifelse(is.null(perplexity.df$k), "L", "K")) +
+         ggplot2::xlab(ifelse(is.null(perplexity.df$K), "L", "K")) +
          ggplot2::ylab("Perplexity") +
          ggplot2::theme_bw()
   
