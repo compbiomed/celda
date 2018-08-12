@@ -505,6 +505,8 @@ calculatePerplexity.celda_G = function(counts, celda.mod, new.counts=NULL) {
  
   if(is.null(new.counts)) {
     new.counts = counts
+  } else {
+    new.counts = processCounts(new.counts)
   }
   if(nrow(new.counts) != nrow(counts)) {
     stop("new.counts should have the same number of rows as counts.")
