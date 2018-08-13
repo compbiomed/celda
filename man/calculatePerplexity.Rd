@@ -10,6 +10,8 @@ calculatePerplexity(counts, celda.mod, new.counts = NULL)
 \item{counts}{The count matrix modeled in the celdaRun parameter}
 
 \item{celda.mod}{A single celda run (usually from the _res.list_ property of a celda_list)}
+
+\item{new.counts}{A new counts matrix used to calculate perplexity. If NULL, perplexity will be calculated for the 'counts' matrix. Default NULL.}
 }
 \value{
 The perplexity for the provided data and model

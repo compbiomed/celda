@@ -6,6 +6,9 @@
 \usage{
 \method{plotGridSearchPerplexity}{celda_G}(celda.list)
 }
+\arguments{
+\item{celda.list}{An object returned from 'celdaGridSearch'}
+}
 \value{
 A ggplot plot object showing perplexity as a function of clustering parameters
 }
