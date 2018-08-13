@@ -289,13 +289,14 @@ simulateCells.celda_C = function(model, S=10, C.Range=c(10, 100), N.Range=c(100,
   cell.sample.label = paste0("Sample_", 1:S)[cell.sample.label]
 
   ## Peform reordering on final Z and Y assigments:
+  cell.counts = processCounts(cell.counts) 
   names = list(row=rownames(cell.counts), column=colnames(cell.counts), 
                sample=unique(cell.sample.label))
   result = list(z=z, completeLogLik=NULL, 
                 finalLogLik=NULL, K=K, 
                 alpha=alpha, beta=beta, seed=seed, 
                 sample.label=cell.sample.label, names=names,
-                count.checksum=NULL)
+                count.checksum=digest::digest(cell.counts, algo="md5"))
   class(result) = "celda_C" 
   result = reorder.celda_C(counts = cell.counts, res = result)
   
@@ -492,8 +493,7 @@ calculatePerplexity.celda_C = function(counts, celda.mod, new.counts=NULL) {
 reorder.celda_C = function(counts, res){
   if(res$K > 2 & isTRUE(length(unique(res$z)) > 1)) {
     res$z = as.integer(as.factor(res$z))
-    fm <- factorizeMatrix(counts = counts, celda.mod = res,
-                          validate.counts = FALSE)
+    fm <- factorizeMatrix(counts = counts, celda.mod = res)
     unique.z = sort(unique(res$z))
     d <- cosineDist(fm$posterior$gene.states[,unique.z])
     h <- hclust(d, method = "complete")

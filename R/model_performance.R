@@ -31,7 +31,7 @@ calculatePerplexity = function(counts, celda.mod, new.counts=NULL) {
 #' @return A list with a data frame summarizing all of the calculated perplexities, and a ggplot2 object visualizing them.
 #' @export
 calculatePerplexityWithResampling <- function(counts, celda.list, resample=5, seed=12345) {
-  if (!isTRUE(class(celda.list) == "celda_list")) stop("celda.list parameter was not of class celda_list.")
+  if (!isTRUE(class(celda.list)[1] == "celda_list")) stop("celda.list parameter was not of class celda_list.")
   if (!isTRUE(is.numeric(resample))) stop("Provided resample parameter was not numeric.")
   
   set.seed(seed)

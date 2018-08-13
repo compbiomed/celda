@@ -299,13 +299,13 @@ simulateCells.celda_G = function(model, C=100, N.Range=c(500,5000),  G=1000,
   colnames(cell.counts) = paste0("Cell_", 1:ncol(cell.counts))
   
   ## Peform reordering on final Z and Y assigments:
+  cell.counts = processCounts(cell.counts)
   names = list(row=rownames(cell.counts), column=colnames(cell.counts))
   result = list(y=y, completeLogLik=NULL, 
                 finalLogLik=NULL, L=L, 
                 beta=beta, delta=delta, gamma=gamma, seed=seed, 
-                names=names, count.checksum=NULL)
+                names=names, count.checksum=digest::digest(cell.counts, algo="md5"))
   class(result) = "celda_G" 
-  storage.mode(cell.counts) = "integer"
   result = reorder.celda_G(counts = cell.counts, res = result)  
   
   return(list(y=result$y, counts=processCounts(cell.counts), L=L, beta=beta, delta=delta, gamma=gamma, phi=phi, psi=psi, eta=eta, seed=seed))
@@ -531,8 +531,7 @@ calculatePerplexity.celda_G = function(counts, celda.mod, new.counts=NULL) {
 reorder.celda_G = function(counts, res) {
   if(res$L > 2 & isTRUE(length(unique(res$y)) > 1)) {
     res$y = as.integer(as.factor(res$y))
-    fm <- factorizeMatrix(counts = counts, celda.mod = res,
-                          validate.counts = FALSE)
+    fm <- factorizeMatrix(counts = counts, celda.mod = res)
     unique.y = sort(unique(res$y))
     cs = prop.table(t(fm$posterior$cell.states[unique.y,]), 2)
     d <- cosineDist(cs)
