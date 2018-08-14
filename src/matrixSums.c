@@ -232,9 +232,7 @@ SEXP _mvAdd(SEXP R_m, SEXP R_v, SEXP R_by_row) {
 
 
 
-
-
-SEXP _mvMult(SEXP R_m, SEXP R_v, SEXP R_by_row)
+SEXP _mvMult_numeric(SEXP R_m, SEXP R_v, SEXP R_by_row)
 {
   int i, j;
   int nr = nrows(R_m);
@@ -281,7 +279,6 @@ SEXP _mvMult(SEXP R_m, SEXP R_v, SEXP R_by_row)
   UNPROTECT(1);
   return(R_ans);
 }
-
 
 
 
