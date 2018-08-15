@@ -54,3 +54,13 @@ mvAdd <- function(x, v, by.row) {
   res <- .Call("_mvAdd", x, v, by.row)
   return(res)
 }
+
+#' @useDynLib celda _mvAdd 
+normalizeCounts.internal <- function(x) {
+  if (is.integer(x)) {
+    res <- .Call("_mvMult", x + 1e-20, 1/colSums(x), by.row=FALSE)
+  } else {
+    res <- .Call("_mvMult", x, 1/colSums(x), by.row=FALSE)
+    }
+  return(res)
+}
