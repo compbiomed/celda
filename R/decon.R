@@ -186,6 +186,9 @@ DeconX = function(omat, z=NULL, max.iter=200, beta=1e-6, delta=10, logfile=NULL,
     # Calculate log-likelihood
     ll.temp = decon.calcLL(omat=omat, z=z, phi = phi, eta = eta, theta=theta )
     ll  = c(ll, ll.temp)
+
+    logMessages(date(), ".... Completed iteration:", iteration, "| logLik:", ll.temp, logfile=logfile, append=TRUE, verbose=verbose)  
+
   }
 
   }
@@ -213,6 +216,9 @@ DeconX = function(omat, z=NULL, max.iter=200, beta=1e-6, delta=10, logfile=NULL,
     # Calculate log-likelihood
     ll.temp = bg.calcLL(omat=omat, cellDist=cellDist, bgDist=bgDist, theta=theta) 
     ll  = c(ll, ll.temp) 
+
+    logMessages(date(), ".... Completed iteration:", iteration, "| logLik:", ll.temp, logfile=logfile, append=TRUE, verbose=verbose)  
+
   }
 
   }
