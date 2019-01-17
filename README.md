@@ -33,7 +33,34 @@ Vignettes are available in the package.
 
 An analysis example using celda with RNASeq via vignette('celda-analysis')
 
+### Decontamination
 
+To simulate two 300 (gene) x 100 (cell) count matrices from 3 different cell types with total reads per cell ranged from 5000 to 40000: one matrix being ture expression matrix (rmat), the other matrix being contamination count matrix (cmat)
+```
+sim.con = simulateObservedMatrix( C = 100, G = 300, K = 3, N.Range= c(5000, 40000), seed = 9124) 
+true.contamination.percentage = colSums( sim.con$cmat ) / colSums( sim.con$cmat + sim.con$rmat ) 
+str(sim.con)   
+# rmat: simulated true expression (gene by cell) count matrix
+# cmat: simulated contamination (gene by cell) count matrix 
+# N.by.C: total transcripts per cell 
+# z: cell type label 
+
+```
+Use DecontX to decompose the observed (contaminated) count matrix back into true expression matrix and a contamination matrix with specified cell label
+```
+observed.mat = sim.con$rmat + sim.con$cmat 
+cell.label = sim.con$z
+decontx.mat = DecontX( omat = observed.mat, z = cell.label,  max.iter = 200, seed = 123) 
+str(decontx.mat) 
+# decontx.mat$res.list$est.rmat: estimated true expression matrix 
+# decontx.mat$res.list$est.conp: estiamted percentage of contamination per cell 
+
+```
+DecontX Performance check 
+```
+estimated.contamination.percentage = decontx.mat$res.list$est.conp
+plot( true.contamination.percentage, estimated.contamination.percentage) ; abline(0,1) 
+```
 
 ## New Features and announcements
 The v0.4 release of celda represents a useable implementation of the various celda clustering models.
