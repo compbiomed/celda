@@ -165,7 +165,7 @@ DeconX = function(omat, z=NULL, max.iter=200, beta=1e-6, delta=10, logfile=NULL,
 
   # initialization
   set.seed(seed)
-  theta  = runif(nC, min = 0.1, max = 0.5)  
+  theta  = runif(nC, min = 0.1, max = 0.9)  
   est.rmat = t (t(omat) * theta )       
   phi =   colSumByGroup.numeric(est.rmat, z, K)
   eta =   rowSums(phi) - phi 
