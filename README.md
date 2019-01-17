@@ -56,7 +56,7 @@ str(decontx.mat)
 # decontx.mat$res.list$est.conp: estiamted percentage of contamination per cell 
 
 ```
-DecontX Performance check
+DecontX Performance check 
 ```
 estimated.contamination.percentage = decontx.mat$res.list$est.conp
 plot( true.contamination.percentage, estimated.contamination.percentage) ; abline(0,1) 
