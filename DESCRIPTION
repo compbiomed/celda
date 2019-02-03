@@ -31,7 +31,8 @@ Imports:
     GenomicRanges,
     data.table,
     Rcpp,
-    RcppEigen
+    RcppEigen,
+    enrichR
 Suggests:
     testthat,
     knitr,
