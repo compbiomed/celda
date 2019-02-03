@@ -12,6 +12,10 @@
 #' @example celdaEnrichment(counts, celda, databases = c('GO_Biological_Process_2018','GO_Molecular_Function_2018'))
 
 celdaEnrichment <- function(counts, celda, databases, fdr = 0.05){
+  #check for correct celda object
+  if(!(class(celda) %in% c('celda_G', 'celda_CG')))
+    stop('No gene modules in celda object. Please provide object of class celda_G or celda_CG.')
+  
   #initialize list with one entry for each gene module
   modules <- vector("list", length = celda@params$L)
   
